@@ -1,11 +1,13 @@
 grammar gramatica;
 
 // -------------------------------------------------------------------
-// PARTE 1: REGLAS DE LÉXICO (TOKENS)
+// PARTE 1: TOKENS (LÉXICO)
 // -------------------------------------------------------------------
 
-// Palabras reservadas o tokens literales
+// Palabras clave del lenguaje
 VAR       : 'var';
+IF        : 'if';
+ELSE      : 'else';
 FMT       : 'fmt';
 PRINTLN   : 'Println';
 
@@ -13,100 +15,113 @@ PRINTLN   : 'Println';
 DOT       : '.';
 LPAREN    : '(';
 RPAREN    : ')';
+LBRACE    : '{';
+RBRACE    : '}';
 SEMICOLON : ';';
 COMMA     : ',';
 ASSIGN    : '=';
 
 // Operadores aritméticos
-PLUS  : '+';
-MINUS : '-';
-STAR  : '*';
-DIV   : '/';
+PLUS      : '+';
+MINUS     : '-';
+STAR      : '*';
+DIV       : '/';
+MOD       : '%'; 
 
-// Literales numéricos sencillos
-INT_LIT : [0-9]+ ;
+// Operadores relacionales
+EQUAL        : '==';
+NOT_EQUAL    : '!=';
+GREATER      : '>';
+LESS         : '<';
+GREATER_EQ   : '>=';
+LESS_EQ      : '<=';
 
-// Identificadores (variables)
-IDENTIFIER
-    : [a-zA-Z_] [a-zA-Z0-9_]*
-    ;
+// Operadores lógicos
+AND_LOGIC   : '&&';
+OR_LOGIC    : '||';
+NOT_LOGIC   : '!';
+
+// Tipos de datos
+INT_LIT    : [0-9]+;
+IDENTIFIER : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
 // Ignorar espacios en blanco y saltos de línea
-WS
-    : [ \t\r\n]+ -> skip
+WS         : [ \t\r\n]+ -> skip;
+
+LINE_COMMENT
+    : '//' ~[\r\n]* -> skip
     ;
 
-// Puedes añadir comentarios si lo deseas
-// Ejemplo:
-// LINE_COMMENT : '//' ~[\r\n]* -> skip;
-// BLOCK_COMMENT: '/*' .*? '*/' -> skip;
-
+BLOCK_COMMENT
+    : '/*' .*? '*/' -> skip
+    ;
 // -------------------------------------------------------------------
-// PARTE 2: REGLAS DE PARSER
+// PARTE 2: REGLAS DEL PARSER
 // -------------------------------------------------------------------
 
-/*
- * Regla principal: un programa consiste en cero o más declaraciones, seguido de EOF.
- * Podrías requerir al menos una instrucción (dcl+), si gustas.
- */
 program
     : dcl* EOF
     ;
 
-/*
- * dcl puede ser una declaración de variable (varDcl) o una sentencia (stmt).
- */
 dcl
     : varDcl
     | stmt
     ;
 
-/*
- * varDcl: sintaxis sencilla: var <ident> = <expr> ;
- * Ejemplo: var x = 10;
- */
 varDcl
     : VAR IDENTIFIER ASSIGN expr SEMICOLON
     ;
 
-/*
- * stmt: por ahora, puede ser:
- *   - una expresión terminada en punto y coma (expresión suelta)
- *   - una llamada a fmt.Println(...)
- */
 stmt
-    : expr SEMICOLON                               # ExprStmt
+    : expr SEMICOLON                                       # ExprStmt
     | FMT DOT PRINTLN LPAREN argumentList? RPAREN SEMICOLON  # FmtPrintStmt
+
     ;
 
-/*
- * Lista de argumentos para fmt.Println: expr (',' expr)*.
- * Ejemplo: fmt.Println( a, 10, x+5 )
- */
+block
+    : LBRACE stmt* RBRACE
+    ;
+
 argumentList
     : expr (COMMA expr)*
     ;
 
-/*
- * Reglas de expresión (expr): aritmética muy básica, negación unaria, paréntesis
- * Inspirado en el esbozo original, con op = tokens aritméticos.
- */
 expr
-    // Ej: -expr
-    : MINUS expr                          # Negate
+    : logicalOrExpr
+    ;
 
-    // Multiplicación / División, con asociatividad de izquierda a derecha
-    | expr (STAR | DIV) expr             # MulDiv
+logicalOrExpr
+    : logicalAndExpr ( OR_LOGIC logicalAndExpr )*
+    ;
 
-    // Adición / Sustracción
-    | expr (PLUS | MINUS) expr           # AddSub
+logicalAndExpr
+    : equalityExpr ( AND_LOGIC equalityExpr )*
+    ;
 
-    // Un entero
-    | INT_LIT                             # Number
+equalityExpr
+    : relationalExpr ( (EQUAL | NOT_EQUAL) relationalExpr )*
+    ;
 
-    // Un identificador (variable)
-    | IDENTIFIER                          # Identifier
+relationalExpr
+    : addExpr ( (GREATER | LESS | GREATER_EQ | LESS_EQ) addExpr )*
+    ;
 
-    // Expresión entre paréntesis
-    | LPAREN expr RPAREN                  # Parens
+addExpr
+    : mulExpr ( (PLUS | MINUS) mulExpr )*
+    ;
+
+mulExpr
+    : unaryExpr ( (STAR | DIV | MOD) unaryExpr )*
+    ;
+
+unaryExpr
+    : MINUS unaryExpr
+    | NOT_LOGIC unaryExpr
+    | primary
+    ;
+
+primary
+    : INT_LIT
+    | IDENTIFIER
+    | LPAREN expr RPAREN
     ;
