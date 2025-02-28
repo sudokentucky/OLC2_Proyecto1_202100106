@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +11,10 @@ using Microsoft.Extensions.Logging;
 public class Compile : Controller
 {
     private readonly ILogger<Compile> _logger;
+
+    // Almacenamos estáticamente los últimos errores y la última tabla de símbolos
+    private static List<ErrorReportEntry> lastErrors = new List<ErrorReportEntry>();
+    private static SymbolTable lastSymbolTable = new SymbolTable();
 
     public Compile(ILogger<Compile> logger)
     {
@@ -25,7 +27,6 @@ public class Compile : Controller
         public required string code { get; set; }
     }
 
-    // POST /compile
     [HttpPost]
     public IActionResult Post([FromBody] CompileRequest request)
     {
@@ -34,25 +35,46 @@ public class Compile : Controller
             return BadRequest(new { error = "Invalid request" });
         }
 
+        lastErrors.Clear();
+        lastSymbolTable = new SymbolTable();
+
         var inputStream = new AntlrInputStream(request.code);
+
+        // 2. Crear lexer y parser
         var lexer = new gramaticaLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
         var parser = new gramaticaParser(tokens);
+        var errorListener = new ErrorListener();
+        lexer.RemoveErrorListeners();
+        parser.RemoveErrorListeners();
+        lexer.AddErrorListener(errorListener);
+        parser.AddErrorListener(errorListener);
 
-        // Generamos el árbol desde la regla 'program'
         var tree = parser.program();
+        var parseErrors = errorListener.GetErrors();
 
-        // Usamos un Visitor (CompilerVisitor) para recorrer el árbol
-        var visitor = new CompilerVisitor();
+        var visitor = new Visitor();
         visitor.Visit(tree);
 
-        // Retornamos el output en un objeto JSON
-        return Ok(new { result = visitor.Output });
+        lastErrors.AddRange(parseErrors);
+        lastSymbolTable = visitor.GetSymbolTable();
 
-        // Para usar Listener, podrías descomentar:
-        // var walker = new ParseTreeWalker();
-        // var lister = new CompilerListener();
-        // walker.Walk(lister, tree);
-        // return Ok(new { result = lister.Output });
+        return Ok(new { result = visitor.Output });
+    }
+
+
+    [HttpGet("errors")]
+    public IActionResult GetErrors()
+    {
+        // Retornamos la lista de errores en JSON
+        return Ok(lastErrors);
+    }
+
+    [HttpGet("symbols")]
+    public IActionResult GetSymbols()
+    {
+        // Obtenemos las entradas de la tabla y las retornamos
+        var entries = lastSymbolTable.GetAllEntries();
+        return Ok(entries);
     }
 }

@@ -100,6 +100,18 @@ public partial class gramaticaBaseListener : IgramaticaListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitFmtPrintStmt([NotNull] gramaticaParser.FmtPrintStmtContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.block"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterBlock([NotNull] gramaticaParser.BlockContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.block"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitBlock([NotNull] gramaticaParser.BlockContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.argumentList"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -112,89 +124,113 @@ public partial class gramaticaBaseListener : IgramaticaListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitArgumentList([NotNull] gramaticaParser.ArgumentListContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by the <c>Identifier</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterIdentifier([NotNull] gramaticaParser.IdentifierContext context) { }
+	public virtual void EnterExpr([NotNull] gramaticaParser.ExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by the <c>Identifier</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitIdentifier([NotNull] gramaticaParser.IdentifierContext context) { }
+	public virtual void ExitExpr([NotNull] gramaticaParser.ExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by the <c>Number</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.logicalOrExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterNumber([NotNull] gramaticaParser.NumberContext context) { }
+	public virtual void EnterLogicalOrExpr([NotNull] gramaticaParser.LogicalOrExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by the <c>Number</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.logicalOrExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitNumber([NotNull] gramaticaParser.NumberContext context) { }
+	public virtual void ExitLogicalOrExpr([NotNull] gramaticaParser.LogicalOrExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by the <c>MulDiv</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.logicalAndExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterMulDiv([NotNull] gramaticaParser.MulDivContext context) { }
+	public virtual void EnterLogicalAndExpr([NotNull] gramaticaParser.LogicalAndExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by the <c>MulDiv</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.logicalAndExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitMulDiv([NotNull] gramaticaParser.MulDivContext context) { }
+	public virtual void ExitLogicalAndExpr([NotNull] gramaticaParser.LogicalAndExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by the <c>AddSub</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.equalityExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterAddSub([NotNull] gramaticaParser.AddSubContext context) { }
+	public virtual void EnterEqualityExpr([NotNull] gramaticaParser.EqualityExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by the <c>AddSub</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.equalityExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitAddSub([NotNull] gramaticaParser.AddSubContext context) { }
+	public virtual void ExitEqualityExpr([NotNull] gramaticaParser.EqualityExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by the <c>Parens</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.relationalExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterParens([NotNull] gramaticaParser.ParensContext context) { }
+	public virtual void EnterRelationalExpr([NotNull] gramaticaParser.RelationalExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by the <c>Parens</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.relationalExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitParens([NotNull] gramaticaParser.ParensContext context) { }
+	public virtual void ExitRelationalExpr([NotNull] gramaticaParser.RelationalExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by the <c>Negate</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.addExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterNegate([NotNull] gramaticaParser.NegateContext context) { }
+	public virtual void EnterAddExpr([NotNull] gramaticaParser.AddExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by the <c>Negate</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.addExpr"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitNegate([NotNull] gramaticaParser.NegateContext context) { }
+	public virtual void ExitAddExpr([NotNull] gramaticaParser.AddExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.mulExpr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterMulExpr([NotNull] gramaticaParser.MulExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.mulExpr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitMulExpr([NotNull] gramaticaParser.MulExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.unaryExpr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterUnaryExpr([NotNull] gramaticaParser.UnaryExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.unaryExpr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitUnaryExpr([NotNull] gramaticaParser.UnaryExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.primary"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterPrimary([NotNull] gramaticaParser.PrimaryContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.primary"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitPrimary([NotNull] gramaticaParser.PrimaryContext context) { }
 
 	/// <inheritdoc/>
 	/// <remarks>The default implementation does nothing.</remarks>

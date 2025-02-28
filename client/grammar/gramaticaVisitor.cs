@@ -64,51 +64,69 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitFmtPrintStmt([NotNull] gramaticaParser.FmtPrintStmtContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.block"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitBlock([NotNull] gramaticaParser.BlockContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="gramaticaParser.argumentList"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitArgumentList([NotNull] gramaticaParser.ArgumentListContext context);
 	/// <summary>
-	/// Visit a parse tree produced by the <c>Identifier</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="gramaticaParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitIdentifier([NotNull] gramaticaParser.IdentifierContext context);
+	Result VisitExpr([NotNull] gramaticaParser.ExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by the <c>Number</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="gramaticaParser.logicalOrExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitNumber([NotNull] gramaticaParser.NumberContext context);
+	Result VisitLogicalOrExpr([NotNull] gramaticaParser.LogicalOrExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by the <c>MulDiv</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="gramaticaParser.logicalAndExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitMulDiv([NotNull] gramaticaParser.MulDivContext context);
+	Result VisitLogicalAndExpr([NotNull] gramaticaParser.LogicalAndExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by the <c>AddSub</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="gramaticaParser.equalityExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitAddSub([NotNull] gramaticaParser.AddSubContext context);
+	Result VisitEqualityExpr([NotNull] gramaticaParser.EqualityExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by the <c>Parens</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="gramaticaParser.relationalExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitParens([NotNull] gramaticaParser.ParensContext context);
+	Result VisitRelationalExpr([NotNull] gramaticaParser.RelationalExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by the <c>Negate</c>
-	/// labeled alternative in <see cref="gramaticaParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="gramaticaParser.addExpr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitNegate([NotNull] gramaticaParser.NegateContext context);
+	Result VisitAddExpr([NotNull] gramaticaParser.AddExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.mulExpr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitMulExpr([NotNull] gramaticaParser.MulExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.unaryExpr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitUnaryExpr([NotNull] gramaticaParser.UnaryExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.primary"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPrimary([NotNull] gramaticaParser.PrimaryContext context);
 }

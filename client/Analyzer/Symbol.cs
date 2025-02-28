@@ -1,14 +1,15 @@
+// Symbol.cs (o donde hayas definido ValueType y Value)
+
 public enum ValueType
 {
     Int,
     Float,
     String,
     Bool,
-    // etc. (rune, struct, etc.)
+    Rune,  
+    Nil   
 }
 
-// Clase Value:
-// Representa un DATO en tiempo de ejecución (resultado de una expresión).
 public class Value
 {
     public ValueType Type { get; set; }
@@ -20,22 +21,41 @@ public class Value
         Data = data;
     }
 
-    // Helpers
+    // Helpers de acceso
     public int AsInt() => (int)Data;
     public double AsFloat() => (double)Data;
     public bool AsBool() => (bool)Data;
     public string AsString() => (string)Data;
+    public char AsRune() => (char)Data;  // NUEVO para runes
 
     // Creadores estáticos
     public static Value FromInt(int i)       => new Value(ValueType.Int, i);
     public static Value FromFloat(double d)  => new Value(ValueType.Float, d);
     public static Value FromString(string s) => new Value(ValueType.String, s);
     public static Value FromBool(bool b)     => new Value(ValueType.Bool, b);
+    public static Value FromRune(char c)     => new Value(ValueType.Rune, c);
+
+    // Manejo de nil (si quieres tratar "nil" como su propio tipo)
+    public static Value FromNil()            => new Value(ValueType.Nil, null);
+
+    // Método de conveniencia para obtener el valor por defecto de un tipo
+    public static Value DefaultForType(ValueType t)
+    {
+        return t switch
+        {
+            ValueType.Int    => FromInt(0),
+            ValueType.Float  => FromFloat(0.0),
+            ValueType.String => FromString(""),
+            ValueType.Bool   => FromBool(false),
+            ValueType.Rune   => FromRune('\0'),     // por ejemplo, 0 ASCII
+            ValueType.Nil    => FromNil(),
+            _                => FromNil()           // fallback
+        };
+    }
 }
 
-// Clase Symbol:
-// Representa la ENTRADA EN LA TABLA DE SÍMBOLOS, generalmente para variables.
-// Puede almacenar su nombre, tipo declarado, valor actual, etc.
+
+
 public class Symbol
 {
     public string Name { get; set; }
