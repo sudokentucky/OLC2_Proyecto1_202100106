@@ -1,109 +1,150 @@
 grammar gramatica;
-
 // -------------------------------------------------------------------
-// PARTE 1: TOKENS (LÉXICO)
+// Tokens (Léxico)
 // -------------------------------------------------------------------
 
-// Palabras clave del lenguaje
-VAR       : 'var';
-IF        : 'if';
-ELSE      : 'else';
-FMT       : 'fmt';
-PRINTLN   : 'Println';
+VAR                      : 'var';
+FMT                      : 'fmt';
+PRINTLN                  : 'Println';
+IF                       : 'if';
+ELSE                     : 'else';
+FOR                      : 'for';
+SWITCH                   : 'switch';
+CASE                     : 'case';
+DEFAULT                  : 'default';
 
-// Caracteres de puntuación / símbolos
-DOT       : '.';
-LPAREN    : '(';
-RPAREN    : ')';
-LBRACE    : '{';
-RBRACE    : '}';
-SEMICOLON : ';';
-COMMA     : ',';
-ASSIGN    : '=';
+INT_TYPE                 : 'int';
+FLOAT64_TYPE             : 'float64';
+STRING_TYPE              : 'string';
+BOOL_TYPE                : 'bool';
+RUNE_TYPE                : 'rune';
 
-// Operadores aritméticos
-PLUS      : '+';
-MINUS     : '-';
-STAR      : '*';
-DIV       : '/';
-MOD       : '%'; 
+PUNTO                    : '.';
+PARENTESIS_IZQ           : '(';
+PARENTESIS_DER           : ')';
+CORCHETE_IZQ             : '{';
+CORCHETE_DER             : '}';
+PUNTO_Y_COMA             : ';';
+COMA                     : ',';
+DOS_PUNTOS               : ':';
 
-// Operadores relacionales
-EQUAL        : '==';
-NOT_EQUAL    : '!=';
-GREATER      : '>';
-LESS         : '<';
-GREATER_EQ   : '>=';
-LESS_EQ      : '<=';
+ASIGNACION               : '=';
+ASIGNACIO_INCREMENTO     : '+=';
+ASIGNACIO_DECREMENTO     : '-=';
 
-// Operadores lógicos
-AND_LOGIC   : '&&';
-OR_LOGIC    : '||';
-NOT_LOGIC   : '!';
+PLUS                     : '+';
+MINUS                    : '-';
+STAR                     : '*';
+DIV                      : '/';
+MOD                      : '%';
 
-// Tipos de datos
-INT_LIT    : [0-9]+;
-IDENTIFIER : [a-zA-Z_] [a-zA-Z0-9_]* ;
+IGUAL                    : '==';
+DIFERENTE                : '!=';
+MAYOR_QUE                : '>';
+MENOR_QUE                : '<';
+MAYOR_IGUAL_QUE          : '>=';
+MENOR_IGUAL_QUE          : '<=';
 
-// Ignorar espacios en blanco y saltos de línea
-WS         : [ \t\r\n]+ -> skip;
+AND                      : '&&';
+OR                       : '||';
+NOT                      : '!';
 
-LINE_COMMENT
-    : '//' ~[\r\n]* -> skip
-    ;
+INT_LIT                  : [0-9]+;
+FLOAT_LIT                : [0-9]+ '.' [0-9]* ;
+STRING_LIT               : '"' ( ~["\\] | '\\' . )* '"';
+RUNE_LIT                 : '\'' ( ~['\\] | '\\' . ) '\'';
+IDENTIFIER               : [a-zA-Z_] [a-zA-Z0-9_]* ;
 
-BLOCK_COMMENT
-    : '/*' .*? '*/' -> skip
-    ;
-// -------------------------------------------------------------------
-// PARTE 2: REGLAS DEL PARSER
-// -------------------------------------------------------------------
+ESPACIO_BLANCO           : [ \t\r\n]+ -> skip ;
+COMENTARIO_LINE          : '//' ~[\r\n]* -> skip ;
+COMENTARIO_MULTILINEA    : '/*' .*? '*/' -> skip ;
+
 
 program
-    : dcl* EOF
+    : instruction* EOF
     ;
 
-dcl
-    : varDcl
-    | stmt
+instruction
+    : declaracion            
+    | assignacion            
+    | exprStmt               
+    | printStmt
+    | ifStmt
+    | switchStmt
     ;
 
-varDcl
-    : VAR IDENTIFIER ASSIGN expr SEMICOLON
+bloque
+    : CORCHETE_IZQ instruction* CORCHETE_DER
+    ;
+switchStmt
+    : SWITCH PARENTESIS_IZQ expresion CORCHETE_IZQ (caseStmt)* (defaultStmt)? CORCHETE_DER
     ;
 
-stmt
-    : expr SEMICOLON                                       # ExprStmt
-    | FMT DOT PRINTLN LPAREN argumentList? RPAREN SEMICOLON  # FmtPrintStmt
-
+caseStmt
+    : CASE expresion DOS_PUNTOS instruction*
     ;
 
-block
-    : LBRACE stmt* RBRACE
+defaultStmt
+    : DEFAULT DOS_PUNTOS instruction*
+    ;
+    
+ifStmt
+    : IF (PARENTESIS_IZQ? expresion PARENTESIS_DER?) bloque (elseIfStmt)* (elseStmt)?
+    ;
+
+elseIfStmt
+    : ELSE IF (PARENTESIS_IZQ? expresion PARENTESIS_DER?) bloque
+    ;
+
+elseStmt
+    : ELSE bloque
+    ;
+
+declaracion
+    : VAR IDENTIFIER typeSpec? (ASIGNACION expresion)? PUNTO_Y_COMA?
+    ;
+
+assignacion
+    : IDENTIFIER (ASIGNACION | ASIGNACIO_INCREMENTO | ASIGNACIO_DECREMENTO) expresion PUNTO_Y_COMA?
+    ;
+
+exprStmt
+    : expresion PUNTO_Y_COMA?
+    ;
+
+printStmt
+    : FMT PUNTO PRINTLN PARENTESIS_IZQ argumentList? PARENTESIS_DER PUNTO_Y_COMA?
+    ;
+
+
+typeSpec
+    : INT_TYPE
+    | FLOAT64_TYPE
+    | STRING_TYPE
+    | BOOL_TYPE
+    | RUNE_TYPE
     ;
 
 argumentList
-    : expr (COMMA expr)*
+    : expresion (COMA expresion)*
     ;
 
-expr
-    : logicalOrExpr
-    ;
+expresion: logicalOrExpr;
 
 logicalOrExpr
-    : logicalAndExpr ( OR_LOGIC logicalAndExpr )*
+    : logicalAndExpr ( OR logicalAndExpr )*
     ;
 
 logicalAndExpr
-    : equalityExpr ( AND_LOGIC equalityExpr )*
+    : equalityExpr ( AND equalityExpr )*
     ;
 
 equalityExpr
-    : relationalExpr ( (EQUAL | NOT_EQUAL) relationalExpr )*
+    : relationalExpr ( (IGUAL | DIFERENTE) relationalExpr )*
     ;
 
 relationalExpr
-    : addExpr ( (GREATER | LESS | GREATER_EQ | LESS_EQ) addExpr )*
+    : addExpr ( (MAYOR_QUE | MENOR_QUE | MAYOR_IGUAL_QUE | MENOR_IGUAL_QUE) addExpr )*
     ;
 
 addExpr
@@ -116,12 +157,15 @@ mulExpr
 
 unaryExpr
     : MINUS unaryExpr
-    | NOT_LOGIC unaryExpr
+    | NOT unaryExpr
     | primary
     ;
 
-primary
-    : INT_LIT
-    | IDENTIFIER
-    | LPAREN expr RPAREN
-    ;
+primary: IDENTIFIER
+       | RUNE_LIT
+       | INT_LIT
+       | FLOAT_LIT
+       | STRING_LIT
+       | PARENTESIS_IZQ expresion PARENTESIS_DER
+       ;
+
