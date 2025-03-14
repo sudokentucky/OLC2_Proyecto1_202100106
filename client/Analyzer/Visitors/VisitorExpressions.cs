@@ -5,13 +5,13 @@ using static gramaticaParser;
 public partial class Visitor
 {
     // expr : logicalOrExpr ;
-    public override Value VisitExpr([NotNull] ExprContext context)
+    public override Value VisitExpresion([NotNull] ExpresionContext context)
     {
         return Visit(context.logicalOrExpr());
     }
 
     // logicalOrExpr : logicalAndExpr (OR_LOGIC logicalAndExpr)* ;
-    public override Value VisitLogicalOrExpr([NotNull] LogicalOrExprContext context)
+    public override Value VisitLogicalOrExpr([NotNull] LogicalOrExprContext context)    
     {
         Value leftValue = Visit(context.logicalAndExpr(0));
         int line = context.Start.Line;
@@ -116,7 +116,7 @@ public partial class Visitor
         for (int i = 1; i < context.unaryExpr().Length; i++)
         {
             Value rightValue = Visit(context.unaryExpr(i));
-            string op = context.GetChild((i * 2) - 1).GetText(); // *, /, %
+            string op = context.GetChild((i * 2) - 1).GetText(); 
 
             leftValue = EvaluateMulDivMod(leftValue, rightValue, op, line, column);
         }
@@ -144,7 +144,7 @@ public partial class Visitor
             else
                 return new Value(ValueType.Int, (int)(-val));
         }
-        else if (context.NOT_LOGIC() != null)
+        else if (context.NOT() != null)
         {
             Value exprValue = Visit(context.unaryExpr());
             if (exprValue.Type != ValueType.Bool)
@@ -164,6 +164,8 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
 {
     int line = context.Start.Line;
     int column = context.Start.Column;
+    
+    // Enteros
     if (context.INT_LIT() != null)
     {
         string text = context.INT_LIT().GetText();
@@ -174,9 +176,80 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
         AddSemanticError(line, column, $"Literal entero inválido: {text}.");
         return new Value(ValueType.Int, 0);
     }
+    
+    // Flotantes
+    else if (context.FLOAT_LIT() != null)
+    {
+        string text = context.FLOAT_LIT().GetText();
+        if (double.TryParse(text, out double d))
+        {
+            return new Value(ValueType.Float, d);
+        }
+        AddSemanticError(line, column, $"Literal flotante inválido: {text}.");
+        return new Value(ValueType.Float, 0.0);
+    }
+    
+    // Cadenas
+    else if (context.STRING_LIT() != null)
+    {
+        string text = context.STRING_LIT().GetText();
+        // Eliminar comillas del inicio y final
+        if (text.Length >= 2 && text.StartsWith("\"") && text.EndsWith("\""))
+        {
+            text = text.Substring(1, text.Length - 2);
+            
+            // Procesar secuencias de escape
+            text = text.Replace("\\n", "\n")
+                      .Replace("\\r", "\r")
+                      .Replace("\\t", "\t")
+                      .Replace("\\\"", "\"")
+                      .Replace("\\\\", "\\");
+                      
+            return new Value(ValueType.String, text);
+        }
+        AddSemanticError(line, column, $"Literal de cadena inválido: {text}.");
+        return new Value(ValueType.String, "");
+    }
+    
+    // Runas (caracteres)
+    else if (context.RUNE_LIT() != null)
+    {
+        string text = context.RUNE_LIT().GetText();
+        // Eliminar comillas simples
+        if (text.Length >= 3 && text.StartsWith("'") && text.EndsWith("'"))
+        {
+            text = text.Substring(1, text.Length - 2);
+            
+            // Procesar secuencias de escape
+            if (text.StartsWith("\\"))
+            {
+                switch (text)
+                {
+                    case "\\n": return new Value(ValueType.Rune, '\n');
+                    case "\\r": return new Value(ValueType.Rune, '\r');
+                    case "\\t": return new Value(ValueType.Rune, '\t');
+                    case "\\'": return new Value(ValueType.Rune, '\'');
+                    case "\\\\": return new Value(ValueType.Rune, '\\');
+                    default:
+                        AddSemanticError(line, column, $"Secuencia de escape desconocida: {text}.");
+                        return new Value(ValueType.Rune, '\0');
+                }
+            }
+            else if (text.Length == 1)
+            {
+                return new Value(ValueType.Rune, text[0]);
+            }
+        }
+        AddSemanticError(line, column, $"Literal de runa inválido: {text}.");
+        return new Value(ValueType.Rune, '\0');
+    }
+    
+    // Identificadores (incluyendo true/false)
     else if (context.IDENTIFIER() != null)
     {
         string varName = context.IDENTIFIER().GetText();
+        
+        // Constantes booleanas
         if (varName == "true")
         {
             return new Value(ValueType.Bool, true);
@@ -185,6 +258,8 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
         {
             return new Value(ValueType.Bool, false);
         }
+        
+        // Variables
         try
         {
             return currentEnv.GetVariable(varName);
@@ -195,13 +270,18 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
             return new Value(ValueType.Int, 0);
         }
     }
-    else if (context.expr() != null)
+    
+    // Expresiones entre paréntesis
+    else if (context.expresion() != null)
     {
-        return Visit(context.expr());
+        return Visit(context.expresion());
     }
-
+    
+    // Si no se reconoce ningún tipo (no debería ocurrir según la gramática)
+    AddSemanticError(line, column, "Expresión primaria desconocida.");
     return new Value(ValueType.Int, 0);
 }
+
 
     private Value EvaluateEquality(Value left, Value right, string op, int line, int col)
     {
@@ -364,4 +444,100 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
 
         return new Value(ValueType.Int, 0);
     }
+public override Value VisitAssignacion([NotNull] AssignacionContext context)
+    {
+        int line = context.Start.Line;
+        int column = context.Start.Column;
+        string varName = context.IDENTIFIER().GetText();
+        Value rightValue = Visit(context.expresion());
+        
+        try
+        {
+            Value currentValue = currentEnv.GetVariable(varName);
+            // Se obtiene el operador de asignación (=, +=, o -=)
+            string op = context.GetChild(1).GetText();
+            Value newValue = null;
+            
+            switch (op)
+            {
+                case "=":
+                    currentEnv.SetVariable(varName, rightValue);
+                    return rightValue;
+                case "+=":
+                    newValue = ApplyPlusAssign(currentValue, rightValue, line, column);
+                    break;
+                case "-=":
+                    newValue = ApplyMinusAssign(currentValue, rightValue, line, column);
+                    break;
+                default:
+                    AddSemanticError(line, column, $"Operador de asignación desconocido: {op}");
+                    return currentValue;
+            }
+            
+            currentEnv.SetVariable(varName, newValue);
+            return newValue;
+        }
+        catch (Exception ex)
+        {
+            AddSemanticError(line, column, ex.Message);
+            return new Value(ValueType.Int, 0);
+        }
+    }
+    
+private Value ApplyPlusAssign(Value currentValue, Value rightValue, int line, int column)
+{
+    // Caso de números: se requiere que ambos operandos sean del mismo tipo.
+    if (IsNumeric(currentValue) != 0 && IsNumeric(rightValue) != 0)
+    {
+        if (currentValue.Type != rightValue.Type)
+        {
+            AddSemanticError(line, column,
+                $"No se puede aplicar '+=' entre tipos diferentes: {currentValue.Type} y {rightValue.Type}.");
+            return currentValue;
+        }
+
+        double result = ToDouble(currentValue) + ToDouble(rightValue);
+        if (currentValue.Type == ValueType.Int)
+            return new Value(ValueType.Int, (int)result);
+        else
+            return new Value(ValueType.Float, result);
+    }
+    // Caso de concatenación de strings (la validación ya es de igualdad de tipo)
+    else if (currentValue.Type == ValueType.String && rightValue.Type == ValueType.String)
+    {
+        return new Value(ValueType.String, currentValue.AsString() + rightValue.AsString());
+    }
+    else
+    {
+        AddSemanticError(line, column,
+            $"No se puede aplicar '+=' entre {currentValue.Type} y {rightValue.Type}.");
+        return currentValue;
+    }
+}
+
+private Value ApplyMinusAssign(Value currentValue, Value rightValue, int line, int column)
+{
+    if (IsNumeric(currentValue) != 0 && IsNumeric(rightValue) != 0)
+    {
+        if (currentValue.Type != rightValue.Type)
+        {
+            AddSemanticError(line, column,
+                $"No se puede aplicar '-=' entre tipos diferentes: {currentValue.Type} y {rightValue.Type}.");
+            return currentValue;
+        }
+
+        double result = ToDouble(currentValue) - ToDouble(rightValue);
+        if (currentValue.Type == ValueType.Int)
+            return new Value(ValueType.Int, (int)result);
+        else
+            return new Value(ValueType.Float, result);
+    }
+    else
+    {
+        AddSemanticError(line, column,
+            $"No se puede aplicar '-=' entre {currentValue.Type} y {rightValue.Type}.");
+        return currentValue;
+    }
+}
+
 }
