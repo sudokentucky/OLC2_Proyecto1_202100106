@@ -24,9 +24,9 @@ public partial class Visitor : gramaticaBaseVisitor<Value>
     // VisitProgram
     public override Value VisitProgram([NotNull] ProgramContext context)
     {
-        foreach (var d in context.dcl())
+        foreach (var instr in context.instruction())
         {
-            Visit(d);
+            Visit(instr);
         }
         return null;
     }
