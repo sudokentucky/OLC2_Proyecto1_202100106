@@ -124,42 +124,44 @@ public partial class Visitor
         return leftValue;
     }
 
-    public override Value VisitUnaryExpr([NotNull] UnaryExprContext context)
+public override Value VisitUnaryExpr([NotNull] UnaryExprContext context)
+{
+    Value exprValue = Visit(context.primary());
+    
+    if (context.MINUS() != null)
     {
-        int line = context.Start.Line;
-        int column = context.Start.Column;
-
-        if (context.MINUS() != null)
+        if (IsNumeric(exprValue) == 0)
         {
-            Value exprValue = Visit(context.unaryExpr());
-            if (IsNumeric(exprValue) == 0)
-            {
-                AddSemanticError(line, column,
-                    $"No se puede aplicar operador unario '-' a tipo {exprValue.Type}.");
-                return new Value(ValueType.Int, 0);
-            }
-            double val = ToDouble(exprValue);
-            if (exprValue.Type == ValueType.Float)
-                return new Value(ValueType.Float, -val);
-            else
-                return new Value(ValueType.Int, (int)(-val));
+            int line = context.Start.Line;
+            int column = context.Start.Column;
+            AddSemanticError(line, column, 
+                $"No se puede aplicar el operador unario '-' a un valor de tipo {exprValue.Type}");
+            return new Value(ValueType.Int, 0);
         }
-        else if (context.NOT() != null)
-        {
-            Value exprValue = Visit(context.unaryExpr());
-            if (exprValue.Type != ValueType.Bool)
-            {
-                AddSemanticError(line, column,
-                    $"No se puede aplicar operador '!' a tipo {exprValue.Type}.");
-                return new Value(ValueType.Bool, false);
-            }
-            return new Value(ValueType.Bool, !exprValue.AsBool());
-        }
+        
+        if (exprValue.Type == ValueType.Float)
+            return new Value(ValueType.Float, -exprValue.AsFloat());
         else
-        {
-            return Visit(context.primary());
-        }
+            return new Value(ValueType.Int, -exprValue.AsInt());
     }
+    else if (context.NOT() != null)
+    {
+        if (exprValue.Type != ValueType.Bool)
+        {
+            int line = context.Start.Line;
+            int column = context.Start.Column;
+            AddSemanticError(line, column, 
+                $"No se puede aplicar el operador '!' a un valor de tipo {exprValue.Type}");
+            return new Value(ValueType.Bool, false);
+        }
+        
+        return new Value(ValueType.Bool, !exprValue.AsBool());
+    }
+    else
+    {
+        return exprValue;
+    }
+}
 public override Value VisitPrimary([NotNull] PrimaryContext context)
 {
     int line = context.Start.Line;

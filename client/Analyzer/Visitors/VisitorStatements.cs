@@ -228,5 +228,89 @@ private bool CompareValuesForEquality(Value left, Value right, int line, int col
         return false;
     }
 }
+
+public override Value VisitForStmt([NotNull] ForStmtContext context)
+{
+    if (context.forWhileStmt() != null)
+    {
+        return Visit(context.forWhileStmt());
+    }
+    else 
+    {
+        return Visit(context.forThreePartStmt());
+    }
+}
+
+public override Value VisitForWhileStmt([NotNull] ForWhileStmtContext context)
+{
+    int line = context.Start.Line;
+    int column = context.Start.Column;
+
+    while (true)
+    {
+        Value condition = Visit(context.expresion());
+        
+        if (condition.Type != ValueType.Bool)
+        {
+            AddSemanticError(line, column,
+                $"La condición del bucle for debe ser booleana, se obtuvo {condition.Type}.");
+            break;
+        }
+        
+        if (!condition.AsBool())
+            break;
+            
+        Visit(context.bloque());
+    }
+    
+    return null;
+}
+
+public override Value VisitForThreePartStmt([NotNull] ForThreePartStmtContext context)
+{
+    int line = context.Start.Line;
+    int column = context.Start.Column;
+    Environment previousEnv = currentEnv;
+    currentEnv = new Environment(table, previousEnv);
+    
+    try
+    {
+        if (context.forInit() != null)
+        {
+            Visit(context.forInit());
+        }
+        
+        while (true)
+        {
+            if (context.expresion() != null)
+            {
+                Value condition = Visit(context.expresion());
+                
+                if (condition.Type != ValueType.Bool)
+                {
+                    AddSemanticError(line, column,
+                        $"La condición del bucle for debe ser booleana, se obtuvo {condition.Type}.");
+                    break;
+                }
+                
+                if (!condition.AsBool())
+                    break;
+            }
+            
+            Visit(context.bloque());
+            
+            if (context.forPost() != null)
+            {
+                Visit(context.forPost());
+            }
+        }
+    }
+    finally
+    {
+        currentEnv = previousEnv;
+    }
+    
+    return null;
+}
     
 }
