@@ -41,59 +41,135 @@ public interface IgramaticaListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitProgram([NotNull] gramaticaParser.ProgramContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="gramaticaParser.dcl"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.instruction"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterDcl([NotNull] gramaticaParser.DclContext context);
+	void EnterInstruction([NotNull] gramaticaParser.InstructionContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="gramaticaParser.dcl"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.instruction"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitDcl([NotNull] gramaticaParser.DclContext context);
+	void ExitInstruction([NotNull] gramaticaParser.InstructionContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="gramaticaParser.varDcl"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.bloque"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterVarDcl([NotNull] gramaticaParser.VarDclContext context);
+	void EnterBloque([NotNull] gramaticaParser.BloqueContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="gramaticaParser.varDcl"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.bloque"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitVarDcl([NotNull] gramaticaParser.VarDclContext context);
+	void ExitBloque([NotNull] gramaticaParser.BloqueContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>ExprStmt</c>
-	/// labeled alternative in <see cref="gramaticaParser.stmt"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.switchStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterSwitchStmt([NotNull] gramaticaParser.SwitchStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.switchStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitSwitchStmt([NotNull] gramaticaParser.SwitchStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.caseStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterCaseStmt([NotNull] gramaticaParser.CaseStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.caseStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitCaseStmt([NotNull] gramaticaParser.CaseStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.defaultStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterDefaultStmt([NotNull] gramaticaParser.DefaultStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.defaultStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitDefaultStmt([NotNull] gramaticaParser.DefaultStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.ifStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterIfStmt([NotNull] gramaticaParser.IfStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.ifStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitIfStmt([NotNull] gramaticaParser.IfStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.elseIfStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterElseIfStmt([NotNull] gramaticaParser.ElseIfStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.elseIfStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitElseIfStmt([NotNull] gramaticaParser.ElseIfStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.elseStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterElseStmt([NotNull] gramaticaParser.ElseStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.elseStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitElseStmt([NotNull] gramaticaParser.ElseStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.declaracion"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterDeclaracion([NotNull] gramaticaParser.DeclaracionContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.declaracion"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitDeclaracion([NotNull] gramaticaParser.DeclaracionContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.assignacion"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterAssignacion([NotNull] gramaticaParser.AssignacionContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.assignacion"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitAssignacion([NotNull] gramaticaParser.AssignacionContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.exprStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void EnterExprStmt([NotNull] gramaticaParser.ExprStmtContext context);
 	/// <summary>
-	/// Exit a parse tree produced by the <c>ExprStmt</c>
-	/// labeled alternative in <see cref="gramaticaParser.stmt"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.exprStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitExprStmt([NotNull] gramaticaParser.ExprStmtContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>FmtPrintStmt</c>
-	/// labeled alternative in <see cref="gramaticaParser.stmt"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.printStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterFmtPrintStmt([NotNull] gramaticaParser.FmtPrintStmtContext context);
+	void EnterPrintStmt([NotNull] gramaticaParser.PrintStmtContext context);
 	/// <summary>
-	/// Exit a parse tree produced by the <c>FmtPrintStmt</c>
-	/// labeled alternative in <see cref="gramaticaParser.stmt"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.printStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitFmtPrintStmt([NotNull] gramaticaParser.FmtPrintStmtContext context);
+	void ExitPrintStmt([NotNull] gramaticaParser.PrintStmtContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="gramaticaParser.block"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.typeSpec"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterBlock([NotNull] gramaticaParser.BlockContext context);
+	void EnterTypeSpec([NotNull] gramaticaParser.TypeSpecContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="gramaticaParser.block"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.typeSpec"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitBlock([NotNull] gramaticaParser.BlockContext context);
+	void ExitTypeSpec([NotNull] gramaticaParser.TypeSpecContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.argumentList"/>.
 	/// </summary>
@@ -105,15 +181,15 @@ public interface IgramaticaListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitArgumentList([NotNull] gramaticaParser.ArgumentListContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="gramaticaParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="gramaticaParser.expresion"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterExpr([NotNull] gramaticaParser.ExprContext context);
+	void EnterExpresion([NotNull] gramaticaParser.ExpresionContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="gramaticaParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="gramaticaParser.expresion"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitExpr([NotNull] gramaticaParser.ExprContext context);
+	void ExitExpresion([NotNull] gramaticaParser.ExpresionContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.logicalOrExpr"/>.
 	/// </summary>
