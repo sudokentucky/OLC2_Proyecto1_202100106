@@ -71,10 +71,33 @@ instruction
     | printStmt
     | ifStmt
     | switchStmt
+    | forStmt
     ;
 
 bloque
     : CORCHETE_IZQ instruction* CORCHETE_DER
+    ;
+forStmt
+    : forWhileStmt
+    | forThreePartStmt
+    ;
+
+forWhileStmt
+    : FOR expresion bloque
+    ;
+
+forThreePartStmt
+    : FOR forInit? PUNTO_Y_COMA expresion? PUNTO_Y_COMA forPost? bloque
+    ;
+
+forInit
+    : assignacion
+    | declaracion
+    ;
+
+forPost
+    : assignacion
+    | exprStmt
     ;
 switchStmt
     : SWITCH PARENTESIS_IZQ expresion CORCHETE_IZQ (caseStmt)* (defaultStmt)? CORCHETE_DER
@@ -87,7 +110,7 @@ caseStmt
 defaultStmt
     : DEFAULT DOS_PUNTOS instruction*
     ;
-    
+
 ifStmt
     : IF (PARENTESIS_IZQ? expresion PARENTESIS_DER?) bloque (elseIfStmt)* (elseStmt)?
     ;
