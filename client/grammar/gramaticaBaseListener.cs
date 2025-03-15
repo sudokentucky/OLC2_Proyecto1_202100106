@@ -72,6 +72,42 @@ public partial class gramaticaBaseListener : IgramaticaListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitBloque([NotNull] gramaticaParser.BloqueContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.breakStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterBreakStmt([NotNull] gramaticaParser.BreakStmtContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.breakStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitBreakStmt([NotNull] gramaticaParser.BreakStmtContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.continueStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterContinueStmt([NotNull] gramaticaParser.ContinueStmtContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.continueStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitContinueStmt([NotNull] gramaticaParser.ContinueStmtContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.returnStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterReturnStmt([NotNull] gramaticaParser.ReturnStmtContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.returnStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitReturnStmt([NotNull] gramaticaParser.ReturnStmtContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.incDecStmt"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>

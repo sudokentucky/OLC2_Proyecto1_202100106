@@ -50,6 +50,24 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitBloque([NotNull] gramaticaParser.BloqueContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.breakStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitBreakStmt([NotNull] gramaticaParser.BreakStmtContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.continueStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitContinueStmt([NotNull] gramaticaParser.ContinueStmtContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.returnStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitReturnStmt([NotNull] gramaticaParser.ReturnStmtContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="gramaticaParser.incDecStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

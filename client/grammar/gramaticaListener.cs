@@ -61,6 +61,36 @@ public interface IgramaticaListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitBloque([NotNull] gramaticaParser.BloqueContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.breakStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterBreakStmt([NotNull] gramaticaParser.BreakStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.breakStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitBreakStmt([NotNull] gramaticaParser.BreakStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.continueStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterContinueStmt([NotNull] gramaticaParser.ContinueStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.continueStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitContinueStmt([NotNull] gramaticaParser.ContinueStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.returnStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterReturnStmt([NotNull] gramaticaParser.ReturnStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.returnStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitReturnStmt([NotNull] gramaticaParser.ReturnStmtContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.incDecStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
