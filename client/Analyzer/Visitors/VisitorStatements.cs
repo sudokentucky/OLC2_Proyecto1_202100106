@@ -168,8 +168,11 @@ public override Value VisitSwitchStmt([NotNull] SwitchStmtContext context)
 {
     int line = context.Start.Line;
     int column = context.Start.Column;
+    
     Value switchValue = Visit(context.expresion());
+    
     bool caseMatched = false;
+    bool executeNext = false; 
     
     switchDepth++; 
     
@@ -179,25 +182,35 @@ public override Value VisitSwitchStmt([NotNull] SwitchStmtContext context)
         {
             Value caseValue = Visit(caseStmt.expresion());
             
-            bool areEqual = CompareValuesForEquality(switchValue, caseValue, line, column);
+            bool areEqual = executeNext || CompareValuesForEquality(switchValue, caseValue, line, column);
             
             if (areEqual)
             {
                 caseMatched = true;
                 
-                try
+                // Si este case tiene instrucciones
+                if (caseStmt.instruction().Length > 0)
                 {
-                    foreach (var instruction in caseStmt.instruction())
+                    executeNext = false;  
+                    
+                    try
                     {
-                        Visit(instruction);
+                        foreach (var instruction in caseStmt.instruction())
+                        {
+                            Visit(instruction);
+                        }
                     }
+                    catch (BreakException)
+                    {
+                        return null;
+                    }
+                    
+                    break;
                 }
-                catch (BreakException)
+                else
                 {
-                    return null;
+                    executeNext = true;
                 }
-                
-                break;
             }
         }
         
