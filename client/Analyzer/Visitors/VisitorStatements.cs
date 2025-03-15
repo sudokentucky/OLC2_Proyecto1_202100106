@@ -168,36 +168,57 @@ public override Value VisitSwitchStmt([NotNull] SwitchStmtContext context)
 {
     int line = context.Start.Line;
     int column = context.Start.Column;
-    
     Value switchValue = Visit(context.expresion());
-    
     bool caseMatched = false;
     
-    foreach (var caseStmt in context.caseStmt())
+    switchDepth++; 
+    
+    try
     {
-        Value caseValue = Visit(caseStmt.expresion());
-        
-        bool areEqual = CompareValuesForEquality(switchValue, caseValue, line, column);
-        
-        if (areEqual)
+        foreach (var caseStmt in context.caseStmt())
         {
-            caseMatched = true;
+            Value caseValue = Visit(caseStmt.expresion());
             
-            foreach (var instruction in caseStmt.instruction())
+            bool areEqual = CompareValuesForEquality(switchValue, caseValue, line, column);
+            
+            if (areEqual)
             {
-                Visit(instruction);
+                caseMatched = true;
+                
+                try
+                {
+                    foreach (var instruction in caseStmt.instruction())
+                    {
+                        Visit(instruction);
+                    }
+                }
+                catch (BreakException)
+                {
+                    return null;
+                }
+                
+                break;
             }
-            
-            break;
+        }
+        
+        if (!caseMatched && context.defaultStmt() != null)
+        {
+            try
+            {
+                foreach (var instruction in context.defaultStmt().instruction())
+                {
+                    Visit(instruction);
+                }
+            }
+            catch (BreakException)
+            {
+                return null;
+            }
         }
     }
-    
-    if (!caseMatched && context.defaultStmt() != null)
+    finally
     {
-        foreach (var instruction in context.defaultStmt().instruction())
-        {
-            Visit(instruction);
-        }
+        switchDepth--; 
     }
     
     return null;
@@ -246,21 +267,40 @@ public override Value VisitForWhileStmt([NotNull] ForWhileStmtContext context)
     int line = context.Start.Line;
     int column = context.Start.Column;
 
-    while (true)
+    loopDepth++; 
+    
+    try
     {
-        Value condition = Visit(context.expresion());
-        
-        if (condition.Type != ValueType.Bool)
+        while (true)
         {
-            AddSemanticError(line, column,
-                $"La condición del bucle for debe ser booleana, se obtuvo {condition.Type}.");
-            break;
-        }
-        
-        if (!condition.AsBool())
-            break;
+            Value condition = Visit(context.expresion());
             
-        Visit(context.bloque());
+            if (condition.Type != ValueType.Bool)
+            {
+                AddSemanticError(line, column,
+                    $"La condición del bucle for debe ser booleana, se obtuvo {condition.Type}.");
+                break;
+            }
+            
+            if (!condition.AsBool())
+                break;
+                
+            try
+            {
+                Visit(context.bloque());
+            }
+            catch (ContinueException)
+            {
+                continue;
+            }
+        }
+    }
+    catch (BreakException)
+    {
+    }
+    finally
+    {
+        loopDepth--; 
     }
     
     return null;
@@ -272,6 +312,8 @@ public override Value VisitForThreePartStmt([NotNull] ForThreePartStmtContext co
     int column = context.Start.Column;
     Environment previousEnv = currentEnv;
     currentEnv = new Environment(table, previousEnv);
+    
+    loopDepth++; 
     
     try
     {
@@ -297,7 +339,13 @@ public override Value VisitForThreePartStmt([NotNull] ForThreePartStmtContext co
                     break;
             }
             
-            Visit(context.bloque());
+            try
+            {
+                Visit(context.bloque());
+            }
+            catch (ContinueException)
+            {
+            }
             
             if (context.forPost() != null)
             {
@@ -305,9 +353,13 @@ public override Value VisitForThreePartStmt([NotNull] ForThreePartStmtContext co
             }
         }
     }
+    catch (BreakException)
+    {
+    }
     finally
     {
-        currentEnv = previousEnv;
+        loopDepth--; 
+        currentEnv = previousEnv; 
     }
     
     return null;

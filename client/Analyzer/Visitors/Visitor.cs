@@ -11,6 +11,8 @@ public partial class Visitor : gramaticaBaseVisitor<Value>
     // Tabla de símbolos global
     private SymbolTable table;
     private Environment currentEnv;
+    private int loopDepth = 0;        
+    private int switchDepth = 0;  
 
     public Visitor()
     {
@@ -20,7 +22,15 @@ public partial class Visitor : gramaticaBaseVisitor<Value>
 
     public SymbolTable GetSymbolTable() => table;
     public IReadOnlyList<ErrorReportEntry> GetSemanticErrors() => semanticErrors.AsReadOnly();
+    private bool IsInsideLoop()
+    {
+        return loopDepth > 0;
+    }
 
+    private bool IsInsideLoopOrSwitch()
+    {
+        return loopDepth > 0 || switchDepth > 0;
+    }
     // VisitProgram
     public override Value VisitProgram([NotNull] ProgramContext context)
     {
