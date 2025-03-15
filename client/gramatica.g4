@@ -1,7 +1,4 @@
 grammar gramatica;
-// -------------------------------------------------------------------
-// Tokens (Léxico)
-// -------------------------------------------------------------------
 
 VAR                      : 'var';
 FMT                      : 'fmt';
@@ -31,6 +28,8 @@ DOS_PUNTOS               : ':';
 ASIGNACION               : '=';
 ASIGNACIO_INCREMENTO     : '+=';
 ASIGNACIO_DECREMENTO     : '-=';
+INCREMENTO               : '++';
+DECREMENTO               : '--';
 
 PLUS                     : '+';
 MINUS                    : '-';
@@ -72,11 +71,17 @@ instruction
     | ifStmt
     | switchStmt
     | forStmt
+    | incDecStmt
     ;
 
 bloque
     : CORCHETE_IZQ instruction* CORCHETE_DER
     ;
+
+incDecStmt
+    : IDENTIFIER (INCREMENTO | DECREMENTO) PUNTO_Y_COMA?
+    ;
+
 forStmt
     : forWhileStmt
     | forThreePartStmt
@@ -98,9 +103,11 @@ forInit
 forPost
     : assignacion
     | exprStmt
+    | incDecStmt
     ;
+
 switchStmt
-    : SWITCH PARENTESIS_IZQ expresion CORCHETE_IZQ (caseStmt)* (defaultStmt)? CORCHETE_DER
+    : SWITCH (PARENTESIS_IZQ expresion PARENTESIS_DER | expresion) CORCHETE_IZQ (caseStmt)* (defaultStmt)? CORCHETE_DER
     ;
 
 caseStmt
