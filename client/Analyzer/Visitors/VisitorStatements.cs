@@ -312,5 +312,56 @@ public override Value VisitForThreePartStmt([NotNull] ForThreePartStmtContext co
     
     return null;
 }
+
+public override Value VisitIncDecStmt([NotNull] IncDecStmtContext context)
+{
+    int line = context.Start.Line;
+    int column = context.Start.Column;
+    string varName = context.IDENTIFIER().GetText();
+
+    try
+    {
+        Value currentValue = currentEnv.GetVariable(varName);
+        
+        if (currentValue.Type != ValueType.Int && currentValue.Type != ValueType.Float)
+        {
+            AddSemanticError(line, column, 
+                $"El operador de incremento/decremento solo es aplicable a tipos numéricos, se obtuvo {currentValue.Type}.");
+            return currentValue;
+        }
+        
+        string op = context.GetChild(1).GetText();
+        Value newValue = null;
+        
+        if (op == "++")
+        {
+            double updated = ToDouble(currentValue) + 1;
+            newValue = currentValue.Type == ValueType.Int
+                ? new Value(ValueType.Int, (int)updated)
+                : new Value(ValueType.Float, updated);
+        }
+        else if (op == "--")
+        {
+            double updated = ToDouble(currentValue) - 1;
+            newValue = currentValue.Type == ValueType.Int
+                ? new Value(ValueType.Int, (int)updated)
+                : new Value(ValueType.Float, updated);
+        }
+        else
+        {
+            AddSemanticError(line, column, $"Operador desconocido: {op}");
+            return currentValue;
+        }
+        
+        currentEnv.SetVariable(varName, newValue);
+        return newValue;
+    }
+    catch (Exception ex)
+    {
+        AddSemanticError(line, column, ex.Message);
+        return new Value(ValueType.Int, 0);
+    }
+}
+
     
 }
