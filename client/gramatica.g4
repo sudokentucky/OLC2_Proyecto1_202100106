@@ -1,14 +1,17 @@
 grammar gramatica;
 
-VAR                      : 'var';
-FMT                      : 'fmt';
-PRINTLN                  : 'Println';
-IF                       : 'if';
-ELSE                     : 'else';
-FOR                      : 'for';
-SWITCH                   : 'switch';
-CASE                     : 'case';
-DEFAULT                  : 'default';
+VAR                     : 'var';
+FMT                     : 'fmt';
+PRINTLN                 : 'Println';
+IF                      : 'if';
+ELSE                    : 'else';
+FOR                     : 'for';
+SWITCH                  : 'switch';
+CASE                    : 'case';
+DEFAULT                 : 'default';
+BREAK                   : 'break';
+CONTINUE                : 'continue';
+RETURN                  : 'return';
 
 INT_TYPE                 : 'int';
 FLOAT64_TYPE             : 'float64';
@@ -72,10 +75,25 @@ instruction
     | switchStmt
     | forStmt
     | incDecStmt
+    | returnStmt
+    | continueStmt
+    | breakStmt
     ;
 
 bloque
     : CORCHETE_IZQ instruction* CORCHETE_DER
+    ;
+
+breakStmt
+    : BREAK PUNTO_Y_COMA?
+    ;
+
+continueStmt
+    : CONTINUE PUNTO_Y_COMA?
+    ;
+
+returnStmt
+    : RETURN expresion? PUNTO_Y_COMA?
     ;
 
 incDecStmt
