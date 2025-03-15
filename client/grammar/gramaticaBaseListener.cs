@@ -72,6 +72,78 @@ public partial class gramaticaBaseListener : IgramaticaListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitBloque([NotNull] gramaticaParser.BloqueContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.incDecStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterIncDecStmt([NotNull] gramaticaParser.IncDecStmtContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.incDecStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitIncDecStmt([NotNull] gramaticaParser.IncDecStmtContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterForStmt([NotNull] gramaticaParser.ForStmtContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitForStmt([NotNull] gramaticaParser.ForStmtContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forWhileStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterForWhileStmt([NotNull] gramaticaParser.ForWhileStmtContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forWhileStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitForWhileStmt([NotNull] gramaticaParser.ForWhileStmtContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forThreePartStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterForThreePartStmt([NotNull] gramaticaParser.ForThreePartStmtContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forThreePartStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitForThreePartStmt([NotNull] gramaticaParser.ForThreePartStmtContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forInit"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterForInit([NotNull] gramaticaParser.ForInitContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forInit"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitForInit([NotNull] gramaticaParser.ForInitContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forPost"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterForPost([NotNull] gramaticaParser.ForPostContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forPost"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitForPost([NotNull] gramaticaParser.ForPostContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.switchStmt"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>

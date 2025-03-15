@@ -50,6 +50,42 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitBloque([NotNull] gramaticaParser.BloqueContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.incDecStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitIncDecStmt([NotNull] gramaticaParser.IncDecStmtContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.forStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitForStmt([NotNull] gramaticaParser.ForStmtContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.forWhileStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitForWhileStmt([NotNull] gramaticaParser.ForWhileStmtContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.forThreePartStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitForThreePartStmt([NotNull] gramaticaParser.ForThreePartStmtContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.forInit"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitForInit([NotNull] gramaticaParser.ForInitContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.forPost"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitForPost([NotNull] gramaticaParser.ForPostContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="gramaticaParser.switchStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

@@ -61,6 +61,66 @@ public interface IgramaticaListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitBloque([NotNull] gramaticaParser.BloqueContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.incDecStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterIncDecStmt([NotNull] gramaticaParser.IncDecStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.incDecStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitIncDecStmt([NotNull] gramaticaParser.IncDecStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterForStmt([NotNull] gramaticaParser.ForStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitForStmt([NotNull] gramaticaParser.ForStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forWhileStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterForWhileStmt([NotNull] gramaticaParser.ForWhileStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forWhileStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitForWhileStmt([NotNull] gramaticaParser.ForWhileStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forThreePartStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterForThreePartStmt([NotNull] gramaticaParser.ForThreePartStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forThreePartStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitForThreePartStmt([NotNull] gramaticaParser.ForThreePartStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forInit"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterForInit([NotNull] gramaticaParser.ForInitContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forInit"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitForInit([NotNull] gramaticaParser.ForInitContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forPost"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterForPost([NotNull] gramaticaParser.ForPostContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forPost"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitForPost([NotNull] gramaticaParser.ForPostContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.switchStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
