@@ -24,7 +24,8 @@ const SymbolTable: React.FC = () => {
           <thead className="bg-vonCount-500 text-light-50">
             <tr>
               <th className="border border-nosferatu px-6 py-3 text-center font-semibold">ID</th>
-              <th className="border border-nosferatu px-6 py-3 text-center font-semibold">Tipo</th>
+              <th className="border border-nosferatu px-6 py-3 text-center font-semibold">Tipo de Símbolo</th>
+              <th className="border border-nosferatu px-6 py-3 text-center font-semibold">Tipo de Dato</th>
               <th className="border border-nosferatu px-6 py-3 text-center font-semibold">Valor</th>
               <th className="border border-nosferatu px-6 py-3 text-center font-semibold">Entorno</th>
               <th className="border border-nosferatu px-6 py-3 text-center font-semibold">Línea</th>
@@ -38,12 +39,13 @@ const SymbolTable: React.FC = () => {
                   key={index}
                   className="hover:bg-dracula-700 hover:text-light transition-all duration-300 ease-in-out"
                 >
-                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.ID}</td>
-                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.Tipo}</td>
-                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.Valor}</td>
-                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.Entorno}</td>
-                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.Línea}</td>
-                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.Columna}</td>
+                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.id}</td>
+                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.symbolType}</td>
+                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.dataType}</td>
+                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.value}</td>
+                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.scope}</td>
+                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.line}</td>
+                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.column}</td>
                 </tr>
               ))
             ) : (
