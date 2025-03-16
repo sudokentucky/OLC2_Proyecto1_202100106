@@ -156,10 +156,17 @@ public partial class Visitor
             }
             return new Value(ValueType.Bool, !exprValue.AsBool());
         }
-        else
+        else if (context.primary() != null)
         {
             return Visit(context.primary());
         }
+        else if (context.sliceFunc() != null)
+        {
+            return Visit(context.sliceFunc());
+        }
+        //Si no es ninguno de los anteriores es error
+        AddSemanticError(line, column, "Expresión unaria desconocida.");
+        return Value.FromNil();
     }
 public override Value VisitPrimary([NotNull] PrimaryContext context)
 {
@@ -212,16 +219,13 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
         return new Value(ValueType.String, "");
     }
     
-    // Runas (caracteres)
     else if (context.RUNE_LIT() != null)
     {
         string text = context.RUNE_LIT().GetText();
-        // Eliminar comillas simples
         if (text.Length >= 3 && text.StartsWith("'") && text.EndsWith("'"))
         {
             text = text.Substring(1, text.Length - 2);
             
-            // Procesar secuencias de escape
             if (text.StartsWith("\\"))
             {
                 switch (text)
@@ -244,13 +248,15 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
         AddSemanticError(line, column, $"Literal de runa inválido: {text}.");
         return new Value(ValueType.Rune, '\0');
     }
-    
-    // Identificadores (incluyendo true/false)
+    else if (context.sliceLiteral() != null)
+    {
+        return Visit(context.sliceLiteral());
+    }
+
     else if (context.IDENTIFIER() != null)
     {
         string varName = context.IDENTIFIER().GetText();
         
-        // Constantes booleanas
         if (varName == "true")
         {
             return new Value(ValueType.Bool, true);
@@ -260,7 +266,6 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
             return new Value(ValueType.Bool, false);
         }
         
-        // Variables
         try
         {
             return currentEnv.GetVariable(varName);
@@ -272,17 +277,49 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
         }
     }
     
-    // Expresiones entre paréntesis
     else if (context.expresion() != null)
     {
         return Visit(context.expresion());
     }
     
-    // Si no se reconoce ningún tipo (no debería ocurrir según la gramática)
     AddSemanticError(line, column, "Expresión primaria desconocida.");
     return new Value(ValueType.Int, 0);
 }
 
+public override Value VisitTypeSpec([NotNull] gramaticaParser.TypeSpecContext context)
+{
+
+    if (context.INT_TYPE() != null)
+    {
+        return Value.FromInt(0); 
+    }
+    else if (context.FLOAT64_TYPE() != null)
+    {
+        return Value.FromFloat(0.0);
+    }
+    else if (context.STRING_TYPE() != null)
+    {
+        return Value.FromString("");
+    }
+    else if (context.BOOL_TYPE() != null)
+    {
+        return Value.FromBool(false);
+    }
+    else if (context.RUNE_TYPE() != null)
+    {
+        return Value.FromRune('\0');
+    }
+    else if (context.sliceType() != null)
+    {
+        return Visit(context.sliceType());
+    }
+    else
+    {
+        AddSemanticError(context.Start.Line, context.Start.Column, 
+                         "Tipo desconocido en typeSpec.");
+        return Value.FromNil();
+    }
+}
 
     private Value EvaluateEquality(Value left, Value right, string op, int line, int col)
     {
