@@ -25,6 +25,7 @@ public class Environment
             symbolType: "Variable",
             dataType: value.Type.ToString(), 
             scope: scopeName,
+            value: value.ToString(),
             line: line,
             column: column
         );
