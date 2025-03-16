@@ -64,26 +64,26 @@ private Value GetDefaultValueForType(string declaredType)
         return Visit(context.expresion());
     }
 
-    public override Value VisitPrintStmt([NotNull] PrintStmtContext context)
-{
-    // Caso simple: sin argumentos
-    if (context.argumentList() == null || context.argumentList().expresion().Length == 0)
+public override Value VisitPrintStmt([NotNull] PrintStmtContext context)
     {
-        Output += "\n"; // Solo imprime una línea vacía
+        // Caso sin argumentos
+        if (context.argumentList() == null || context.argumentList().expresion().Length == 0)
+        {
+            Output += "\n";
+            return null;
+        }
+
+        // Obtener y evaluar los argumentos
+        var args = VisitArgumentList(context.argumentList());
+
+        // Convertir a string usando Value.ToString()
+        string outputLine = string.Join(" ", args.Select(v => v.ToString()));
+
+        // Agregar al output con salto de línea
+        Output += outputLine + "\n";
+        
         return null;
     }
-    
-    // Obtener y evaluar todos los argumentos
-    var args = VisitArgumentList(context.argumentList());
-    
-    // Convertir a string y unir con espacios
-    string outputLine = string.Join(" ", args.Select(ValueToString));
-    
-    // Agregar al output con salto de línea
-    Output += outputLine + "\n";
-    
-    return null;
-}
 
      private Value[] VisitArgumentList(ArgumentListContext ctx)
     {
