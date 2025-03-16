@@ -12,6 +12,12 @@ DEFAULT                 : 'default';
 BREAK                   : 'break';
 CONTINUE                : 'continue';
 RETURN                  : 'return';
+LEN                     : 'len';
+APPEND                  : 'append';
+SLICES                  : 'slices';
+STRINGS                 : 'strings';
+JOIN                    : 'join';
+INDEX                   : 'Index';
 
 INT_TYPE                 : 'int';
 FLOAT64_TYPE             : 'float64';
@@ -22,8 +28,10 @@ RUNE_TYPE                : 'rune';
 PUNTO                    : '.';
 PARENTESIS_IZQ           : '(';
 PARENTESIS_DER           : ')';
-CORCHETE_IZQ             : '{';
-CORCHETE_DER             : '}';
+LLAVE_IZQ                : '{';
+LLAVE_DER                : '}';
+CORCHETE_IZQ             : '[';
+CORCHETE_DER             : ']';
 PUNTO_Y_COMA             : ';';
 COMA                     : ',';
 DOS_PUNTOS               : ':';
@@ -81,7 +89,7 @@ instruction
     ;
 
 bloque
-    : CORCHETE_IZQ instruction* CORCHETE_DER
+    : LLAVE_IZQ instruction* LLAVE_DER
     ;
 
 breakStmt
@@ -125,7 +133,7 @@ forPost
     ;
 
 switchStmt
-    : SWITCH (PARENTESIS_IZQ expresion PARENTESIS_DER | expresion) CORCHETE_IZQ (caseStmt)* (defaultStmt)? CORCHETE_DER
+    : SWITCH (PARENTESIS_IZQ expresion PARENTESIS_DER | expresion) LLAVE_IZQ (caseStmt)* (defaultStmt)? LLAVE_DER
     ;
 
 caseStmt
@@ -164,15 +172,6 @@ printStmt
     : FMT PUNTO PRINTLN PARENTESIS_IZQ argumentList? PARENTESIS_DER PUNTO_Y_COMA?
     ;
 
-
-typeSpec
-    : INT_TYPE
-    | FLOAT64_TYPE
-    | STRING_TYPE
-    | BOOL_TYPE
-    | RUNE_TYPE
-    ;
-
 argumentList
     : expresion (COMA expresion)*
     ;
@@ -206,7 +205,33 @@ mulExpr
 unaryExpr
     : MINUS unaryExpr
     | NOT unaryExpr
-    | primary
+    | primary 
+    | sliceFunc
+    ;
+
+sliceFunc
+    : LEN PARENTESIS_IZQ expresion PARENTESIS_DER
+    | APPEND PARENTESIS_IZQ expresion (COMA expresion)* PARENTESIS_DER
+    | SLICES PUNTO INDEX PARENTESIS_IZQ expresion COMA expresion PARENTESIS_DER
+    | STRINGS PUNTO JOIN PARENTESIS_IZQ expresion COMA expresion PARENTESIS_DER
+    ;
+
+sliceType
+    : CORCHETE_IZQ CORCHETE_DER typeSpec
+    ;
+
+typeSpec
+    : INT_TYPE
+    | FLOAT64_TYPE
+    | STRING_TYPE
+    | BOOL_TYPE
+    | RUNE_TYPE
+    | sliceType
+    ;
+
+sliceLiteral
+    : CORCHETE_IZQ CORCHETE_DER typeSpec? 
+      LLAVE_IZQ (expresion (COMA expresion)*)? LLAVE_DER
     ;
 
 primary: IDENTIFIER
@@ -215,5 +240,6 @@ primary: IDENTIFIER
        | FLOAT_LIT
        | STRING_LIT
        | PARENTESIS_IZQ expresion PARENTESIS_DER
+       | sliceLiteral
        ;
 
