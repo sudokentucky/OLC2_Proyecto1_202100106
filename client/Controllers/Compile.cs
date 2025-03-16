@@ -73,7 +73,6 @@ public class Compile : Controller
     [HttpGet("symbols")]
     public IActionResult GetSymbols()
     {
-        // Obtenemos las entradas de la tabla y las retornamos
         var entries = lastSymbolTable.GetAllEntries();
         return Ok(entries);
     }
