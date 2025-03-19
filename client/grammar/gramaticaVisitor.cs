@@ -44,6 +44,48 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitInstruction([NotNull] gramaticaParser.InstructionContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.funcDecl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFuncDecl([NotNull] gramaticaParser.FuncDeclContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.paramsList"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitParamsList([NotNull] gramaticaParser.ParamsListContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.param"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitParam([NotNull] gramaticaParser.ParamContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.structDecl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStructDecl([NotNull] gramaticaParser.StructDeclContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.fieldDecl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFieldDecl([NotNull] gramaticaParser.FieldDeclContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.structLiteral"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStructLiteral([NotNull] gramaticaParser.StructLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.fieldValue"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFieldValue([NotNull] gramaticaParser.FieldValueContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="gramaticaParser.bloque"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -164,12 +206,6 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitPrintStmt([NotNull] gramaticaParser.PrintStmtContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="gramaticaParser.typeSpec"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitTypeSpec([NotNull] gramaticaParser.TypeSpecContext context);
-	/// <summary>
 	/// Visit a parse tree produced by <see cref="gramaticaParser.argumentList"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -223,6 +259,30 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitUnaryExpr([NotNull] gramaticaParser.UnaryExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.sliceFunc"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSliceFunc([NotNull] gramaticaParser.SliceFuncContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.sliceType"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSliceType([NotNull] gramaticaParser.SliceTypeContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.typeSpec"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitTypeSpec([NotNull] gramaticaParser.TypeSpecContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.sliceLiteral"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="gramaticaParser.primary"/>.
 	/// </summary>
