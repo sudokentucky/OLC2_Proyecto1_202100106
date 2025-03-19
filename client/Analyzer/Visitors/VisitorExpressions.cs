@@ -172,118 +172,209 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
 {
     int line = context.Start.Line;
     int column = context.Start.Column;
-    
-    // Enteros
-    if (context.INT_LIT() != null)
-    {
-        string text = context.INT_LIT().GetText();
-        if (int.TryParse(text, out int n))
-        {
-            return new Value(ValueType.Int, n);
-        }
-        AddSemanticError(line, column, $"Literal entero inválido: {text}.");
-        return new Value(ValueType.Int, 0);
-    }
-    
-    // Flotantes
-    else if (context.FLOAT_LIT() != null)
-    {
-        string text = context.FLOAT_LIT().GetText();
-        if (double.TryParse(text, out double d))
-        {
-            return new Value(ValueType.Float, d);
-        }
-        AddSemanticError(line, column, $"Literal flotante inválido: {text}.");
-        return new Value(ValueType.Float, 0.0);
-    }
-    
-    // Cadenas
-    else if (context.STRING_LIT() != null)
-    {
-        string text = context.STRING_LIT().GetText();
-        // Eliminar comillas del inicio y final
-        if (text.Length >= 2 && text.StartsWith("\"") && text.EndsWith("\""))
-        {
-            text = text.Substring(1, text.Length - 2);
-            
-            // Procesar secuencias de escape
-            text = text.Replace("\\n", "\n")
-                      .Replace("\\r", "\r")
-                      .Replace("\\t", "\t")
-                      .Replace("\\\"", "\"")
-                      .Replace("\\\\", "\\");
-                      
-            return new Value(ValueType.String, text);
-        }
-        AddSemanticError(line, column, $"Literal de cadena inválido: {text}.");
-        return new Value(ValueType.String, "");
-    }
-    
-    else if (context.RUNE_LIT() != null)
-    {
-        string text = context.RUNE_LIT().GetText();
-        if (text.Length >= 3 && text.StartsWith("'") && text.EndsWith("'"))
-        {
-            text = text.Substring(1, text.Length - 2);
-            
-            if (text.StartsWith("\\"))
-            {
-                switch (text)
-                {
-                    case "\\n": return new Value(ValueType.Rune, '\n');
-                    case "\\r": return new Value(ValueType.Rune, '\r');
-                    case "\\t": return new Value(ValueType.Rune, '\t');
-                    case "\\'": return new Value(ValueType.Rune, '\'');
-                    case "\\\\": return new Value(ValueType.Rune, '\\');
-                    default:
-                        AddSemanticError(line, column, $"Secuencia de escape desconocida: {text}.");
-                        return new Value(ValueType.Rune, '\0');
-                }
-            }
-            else if (text.Length == 1)
-            {
-                return new Value(ValueType.Rune, text[0]);
-            }
-        }
-        AddSemanticError(line, column, $"Literal de runa inválido: {text}.");
-        return new Value(ValueType.Rune, '\0');
-    }
-    else if (context.sliceLiteral() != null)
-    {
-        return Visit(context.sliceLiteral());
-    }
 
+    if (context.INT_LIT() != null)
+        return ParseIntLiteral(context.INT_LIT().GetText(), line, column);
+    else if (context.FLOAT_LIT() != null)
+        return ParseFloatLiteral(context.FLOAT_LIT().GetText(), line, column);
+    else if (context.STRING_LIT() != null)
+        return ParseStringLiteral(context.STRING_LIT().GetText(), line, column);
+    else if (context.RUNE_LIT() != null)
+        return ParseRuneLiteral(context.RUNE_LIT().GetText(), line, column);
+    else if (context.sliceLiteral() != null)
+        return Visit(context.sliceLiteral());
+    else if (context.structLiteral() != null)
+        return Visit(context.structLiteral());
     else if (context.IDENTIFIER() != null)
-    {
-        string varName = context.IDENTIFIER().GetText();
-        
-        if (varName == "true")
-        {
-            return new Value(ValueType.Bool, true);
-        }
-        else if (varName == "false")
-        {
-            return new Value(ValueType.Bool, false);
-        }
-        
-        try
-        {
-            return currentEnv.GetVariable(varName);
-        }
-        catch (Exception ex)
-        {
-            AddSemanticError(line, column, ex.Message);
-            return new Value(ValueType.Int, 0);
-        }
-    }
-    
-    else if (context.expresion() != null)
-    {
-        return Visit(context.expresion());
-    }
-    
+        return EvaluateIdentifier(context, line, column);
+    else if (context.expresion() != null && context.expresion().Length > 0)
+        return Visit(context.expresion(0));
+
     AddSemanticError(line, column, "Expresión primaria desconocida.");
     return new Value(ValueType.Int, 0);
+}
+
+private Value ParseIntLiteral(string text, int line, int column)
+{
+    if (int.TryParse(text, out int n))
+        return new Value(ValueType.Int, n);
+    AddSemanticError(line, column, $"Literal entero inválido: {text}.");
+    return new Value(ValueType.Int, 0);
+}
+
+private Value ParseFloatLiteral(string text, int line, int column)
+{
+    if (double.TryParse(text, out double d))
+        return new Value(ValueType.Float, d);
+    AddSemanticError(line, column, $"Literal flotante inválido: {text}.");
+    return new Value(ValueType.Float, 0.0);
+}
+
+private Value ParseStringLiteral(string text, int line, int column)
+{
+    if (text.Length >= 2 && text.StartsWith("\"") && text.EndsWith("\""))
+    {
+        // Eliminar comillas del inicio y final
+        text = text.Substring(1, text.Length - 2);
+        // Procesar secuencias de escape
+        text = text.Replace("\\n", "\n")
+                   .Replace("\\r", "\r")
+                   .Replace("\\t", "\t")
+                   .Replace("\\\"", "\"")
+                   .Replace("\\\\", "\\");
+        return new Value(ValueType.String, text);
+    }
+    AddSemanticError(line, column, $"Literal de cadena inválido: {text}.");
+    return new Value(ValueType.String, "");
+}
+
+private Value ParseRuneLiteral(string text, int line, int column)
+{
+    if (text.Length >= 3 && text.StartsWith("'") && text.EndsWith("'"))
+    {
+        text = text.Substring(1, text.Length - 2);
+        if (text.StartsWith("\\"))
+        {
+            switch (text)
+            {
+                case "\\n": return new Value(ValueType.Rune, '\n');
+                case "\\r": return new Value(ValueType.Rune, '\r');
+                case "\\t": return new Value(ValueType.Rune, '\t');
+                case "\\'": return new Value(ValueType.Rune, '\'');
+                case "\\\\": return new Value(ValueType.Rune, '\\');
+                default:
+                    AddSemanticError(line, column, $"Secuencia de escape desconocida: {text}.");
+                    return new Value(ValueType.Rune, '\0');
+            }
+        }
+        else if (text.Length == 1)
+            return new Value(ValueType.Rune, text[0]);
+    }
+    AddSemanticError(line, column, $"Literal de runa inválido: {text}.");
+    return new Value(ValueType.Rune, '\0');
+}
+
+private Value EvaluateIdentifier(PrimaryContext context, int line, int column)
+{
+    string varName = context.IDENTIFIER(0).GetText();
+
+    // Literales booleanos especiales
+    if (varName == "true")
+        return new Value(ValueType.Bool, true);
+    else if (varName == "false")
+        return new Value(ValueType.Bool, false);
+
+    // Llamada a función
+    if (context.PARENTESIS_IZQ() != null)
+    {
+        Value[] arguments = EvaluateArgumentList(context);
+        return CallFunction(varName, arguments, line, column);
+    }
+
+    Value currentValue = GetVariableValue(varName, line, column);
+    currentValue = EvaluateIndices(currentValue, context, varName, line, column);
+    currentValue = EvaluateFieldAccess(currentValue, context, varName, line, column);
+    
+    return currentValue;
+}
+
+private Value[] EvaluateArgumentList(PrimaryContext context)
+{
+    if (context.argumentList() != null)
+    {
+        var exprs = context.argumentList().expresion();
+        Value[] arguments = new Value[exprs.Length];
+        for (int i = 0; i < exprs.Length; i++)
+            arguments[i] = Visit(exprs[i]);
+        return arguments;
+    }
+    return new Value[0];
+}
+
+private Value GetVariableValue(string varName, int line, int column)
+{
+    try
+    {
+        return currentEnv.GetVariable(varName);
+    }
+    catch (Exception ex)
+    {
+        AddSemanticError(line, column, ex.Message);
+        return new Value(ValueType.Int, 0);
+    }
+}
+
+private Value EvaluateIndices(Value currentValue, PrimaryContext context, string varName, int line, int column)
+{
+    var indexNodes = context.CORCHETE_IZQ();
+    if (indexNodes != null && indexNodes.Length > 0)
+    {
+        var expressionList = context.expresion();
+        for (int i = 0; i < expressionList.Length; i++)
+        {
+            Value idxValue = Visit(expressionList[i]);
+            if (idxValue.Type != ValueType.Int)
+            {
+                AddSemanticError(line, column, "El índice debe ser de tipo entero.");
+                return new Value(ValueType.Int, 0);
+            }
+            int index = idxValue.AsInt();
+            if (currentValue.Type != ValueType.Slice)
+            {
+                AddSemanticError(line, column, $"El valor de '{varName}' no es indexable (no es un slice).");
+                return currentValue;
+            }
+            try
+            {
+                Slice s = currentValue.AsSlice();
+                currentValue = s[index];
+            }
+            catch (Exception ex)
+            {
+                AddSemanticError(line, column, ex.Message);
+                return new Value(ValueType.Int, 0);
+            }
+        }
+    }
+    return currentValue;
+}
+
+private Value EvaluateFieldAccess(Value currentValue, PrimaryContext context, string varName, int line, int column)
+{
+    var puntoNodes = context.PUNTO();
+    var identifiers = context.IDENTIFIER();
+    if (puntoNodes != null && puntoNodes.Length > 0)
+    {
+        for (int i = 0; i < puntoNodes.Length; i++)
+        {
+            if (i + 1 < identifiers.Length)
+            {
+                string fieldName = identifiers[i + 1].GetText();
+                if (currentValue.Type != ValueType.Struct)
+                {
+                    AddSemanticError(line, column,
+                        $"No se puede acceder a campos en un valor de tipo {currentValue.Type}");
+                    return Value.FromNil();
+                }
+                try
+                {
+                    StructInstance structInst = currentValue.AsStruct();
+                    currentValue = structInst.GetField(fieldName);
+                }
+                catch (Exception ex)
+                {
+                    AddSemanticError(line, column, ex.Message);
+                    return Value.FromNil();
+                }
+            }
+            else
+            {
+                AddSemanticError(line, column, "Error de sintaxis: se esperaba un nombre de campo después del punto.");
+                return Value.FromNil();
+            }
+        }
+    }
+    return currentValue;
 }
 
 public override Value VisitTypeSpec([NotNull] gramaticaParser.TypeSpecContext context)
@@ -483,15 +574,70 @@ public override Value VisitTypeSpec([NotNull] gramaticaParser.TypeSpecContext co
         return new Value(ValueType.Int, 0);
     }
 public override Value VisitAssignacion([NotNull] AssignacionContext context)
+{
+    int line = context.Start.Line;
+    int column = context.Start.Column;
+    string targetIdentifier = context.IDENTIFIER().GetText();
+    Value rightValue = Visit(context.expresion());
+    
+    try
     {
-        int line = context.Start.Line;
-        int column = context.Start.Column;
-        string varName = context.IDENTIFIER().GetText();
-        Value rightValue = Visit(context.expresion());
-        
-        try
+        // Si tenemos una asignación a un campo de struct (contiene un punto)
+        if (targetIdentifier.Contains("."))
         {
-            Value currentValue = currentEnv.GetVariable(varName);
+            // Dividir en partes: "persona.direccion.calle" -> ["persona", "direccion", "calle"]
+            string[] parts = targetIdentifier.Split('.');
+            string structVarName = parts[0];
+            
+            // Obtener la instancia base del struct
+            Value structValue = currentEnv.GetVariable(structVarName);
+            if (structValue.Type != ValueType.Struct)
+            {
+                AddSemanticError(line, column, $"{structVarName} no es un struct");
+                return Value.FromNil();
+            }
+            
+            StructInstance instance = structValue.AsStruct();
+            
+            // Navegar a través de los campos intermedios hasta llegar al penúltimo
+            for (int i = 1; i < parts.Length - 1; i++)
+            {
+                string fieldName = parts[i];
+                try
+                {
+                    Value fieldValue = instance.GetField(fieldName);
+                    if (fieldValue.Type != ValueType.Struct)
+                    {
+                        AddSemanticError(line, column, 
+                            $"El campo {fieldName} no es un struct y no permite acceso anidado");
+                        return Value.FromNil();
+                    }
+                    instance = fieldValue.AsStruct();
+                }
+                catch (Exception ex)
+                {
+                    AddSemanticError(line, column, ex.Message);
+                    return Value.FromNil();
+                }
+            }
+            
+            // Asignar al último campo
+            string finalFieldName = parts[parts.Length - 1];
+            try
+            {
+                instance.SetField(finalFieldName, rightValue);
+                return rightValue;
+            }
+            catch (Exception ex)
+            {
+                AddSemanticError(line, column, ex.Message);
+                return Value.FromNil();
+            }
+        }
+        else
+        {
+            // Asignación normal a una variable
+            Value currentValue = currentEnv.GetVariable(targetIdentifier);
             // Se obtiene el operador de asignación (=, +=, o -=)
             string op = context.GetChild(1).GetText();
             Value newValue = null;
@@ -499,7 +645,7 @@ public override Value VisitAssignacion([NotNull] AssignacionContext context)
             switch (op)
             {
                 case "=":
-                    currentEnv.SetVariable(varName, rightValue);
+                    currentEnv.SetVariable(targetIdentifier, rightValue);
                     return rightValue;
                 case "+=":
                     newValue = ApplyPlusAssign(currentValue, rightValue, line, column);
@@ -512,15 +658,16 @@ public override Value VisitAssignacion([NotNull] AssignacionContext context)
                     return currentValue;
             }
             
-            currentEnv.SetVariable(varName, newValue);
+            currentEnv.SetVariable(targetIdentifier, newValue);
             return newValue;
         }
-        catch (Exception ex)
-        {
-            AddSemanticError(line, column, ex.Message);
-            return new Value(ValueType.Int, 0);
-        }
     }
+    catch (Exception ex)
+    {
+        AddSemanticError(line, column, ex.Message);
+        return Value.FromNil();
+    }
+}
     
 private Value ApplyPlusAssign(Value currentValue, Value rightValue, int line, int column)
 {
