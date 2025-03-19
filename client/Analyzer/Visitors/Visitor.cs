@@ -11,6 +11,11 @@ public partial class Visitor : gramaticaBaseVisitor<Value>
     // Tabla de símbolos global
     private SymbolTable table;
     private Environment currentEnv;
+    private StructType currentStruct;
+    private string currentStructTypeName;
+    
+
+
     private int loopDepth = 0;        
     private int switchDepth = 0;  
 
@@ -32,13 +37,29 @@ public partial class Visitor : gramaticaBaseVisitor<Value>
         return loopDepth > 0 || switchDepth > 0;
     }
     // VisitProgram
-    public override Value VisitProgram([NotNull] ProgramContext context)
+    // En Visitor.cs
+public override Value VisitProgram([NotNull] ProgramContext context)
     {
+        // Primera pasada: Registrar todas las estructuras y funciones
+        foreach (var structDecl in context.structDecl())
+        {
+            Visit(structDecl);
+        }
+        
+        foreach (var funcDecl in context.funcDecl())
+        {
+            Visit(funcDecl);
+        }
+        
+        // Ejecutar instrucciones a nivel global (incluyendo la llamada explícita a main)
         foreach (var instr in context.instruction())
         {
             Visit(instr);
         }
-        return null;
+        
+        // Quitar la llamada automática a main
+        
+        return Value.FromNil();
     }
 
     // Métodos auxiliares
