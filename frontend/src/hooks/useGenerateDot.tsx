@@ -9,7 +9,7 @@ export const useDotCode = () => {
     const fetchDotCode = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:3000/generateDot"); // Llamada al backend
+        const response = await fetch("http://localhost:5011/compile/generateDot"); // Llamada al backend
         if (!response.ok) {
           throw new Error("Error al obtener el código DOT.");
         }
