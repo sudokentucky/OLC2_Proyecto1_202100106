@@ -16,7 +16,7 @@ export const useErrors = () => {
     const fetchErrors = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:3000/errores");
+        const response = await fetch("http://localhost:5011/compile/errors");
         if (!response.ok) {
           throw new Error("Error al obtener la lista de errores.");
         }
