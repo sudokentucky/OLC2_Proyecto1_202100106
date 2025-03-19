@@ -3,68 +3,134 @@ using Antlr4.Runtime.Misc;
 using static gramaticaParser;
 public partial class Visitor{
 
-    public override Value VisitSliceType([NotNull] gramaticaParser.SliceTypeContext context)
+public override Value VisitSliceType(gramaticaParser.SliceTypeContext context)
 {
-    Value baseTypeVal = Visit(context.typeSpec());
-    ValueType baseVT = baseTypeVal.Type; 
-    Slice sliceTypeHolder = new Slice(baseVT);
-    return new Value(ValueType.Slice, sliceTypeHolder);
+    Value subTypeVal = Visit(context.typeSpec());
+
+    if (subTypeVal.Type == ValueType.Slice)
+    {
+        // Obtener el tipo base del slice interno (ej: int en [][]int)
+        Slice innerSlice = (Slice)subTypeVal.Data;
+        ValueType nestedType = innerSlice.NestedValueType;
+
+        // Crear slice multidimensional con el tipo base heredado
+        Slice topSlice = new Slice(ValueType.Slice, nestedType);
+        return new Value(ValueType.Slice, topSlice);
+    }
+    else
+    {
+        // Slice 1D (ej: []int)
+        Slice topSlice = new Slice(subTypeVal.Type);
+        return new Value(ValueType.Slice, topSlice);
+    }
 }
+
 public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralContext context)
 {
-
     int line = context.Start.Line;
-    int col  = context.Start.Column;
+    int col = context.Start.Column;
 
-    Value sliceTypeValue = null;
+    // Obtener el tipo declarado (ej: [][]int)
+    Slice declaredSliceType = null;
+    ValueType declaredElementType = ValueType.Nil;
+    ValueType declaredNestedType = ValueType.Nil;
+
     if (context.typeSpec() != null)
     {
-        sliceTypeValue = Visit(context.typeSpec());
+        Value typeValue = Visit(context.typeSpec());
+        if (typeValue.Type == ValueType.Slice)
+        {
+            declaredSliceType = typeValue.AsSlice();
+            declaredElementType = declaredSliceType.ElementType;
+            declaredNestedType = declaredSliceType.NestedValueType;
+        }
+        else
+        {
+            declaredElementType = typeValue.Type;
+        }
     }
 
+    // Recolectar elementos del literal
     var exprList = context.expresion();
     List<Value> elements = new List<Value>();
-
     foreach (var exprNode in exprList)
     {
         Value elemValue = Visit(exprNode);
         elements.Add(elemValue);
     }
 
-    ValueType finalElemType = ValueType.Nil;
+    // Determinar si es multidimensional y los tipos esperados
+    bool isMultiDimensional = declaredElementType == ValueType.Slice;
+    ValueType expectedElementType = declaredElementType;
+    ValueType expectedNestedType = declaredNestedType;
 
-    if (sliceTypeValue != null && sliceTypeValue.Type != ValueType.Nil)
+    // Inferir tipo si no está declarado
+    if (declaredElementType == ValueType.Nil && elements.Count > 0)
     {
-        finalElemType = sliceTypeValue.Type == ValueType.Slice
-            ? (sliceTypeValue.Data as Slice)?.ElementType ?? ValueType.Nil
-            : sliceTypeValue.Type;
-    }
-    else
-    {
-        if (elements.Count > 0)
+        if (elements[0].Type == ValueType.Slice)
         {
-            finalElemType = elements[0].Type;
+            isMultiDimensional = true;
+            Slice firstElement = elements[0].AsSlice();
+            expectedElementType = ValueType.Slice;
+            expectedNestedType = firstElement.NestedValueType;
         }
         else
         {
-
-            finalElemType = ValueType.Nil;
+            expectedElementType = elements[0].Type;
         }
     }
 
+    // Validar tipos de elementos
     foreach (var elem in elements)
     {
-        if (elem.Type != finalElemType && finalElemType != ValueType.Nil)
+        if (isMultiDimensional)
         {
-            AddSemanticError(line, col,
-                $"Todos los elementos en el slice deben ser del mismo tipo. Se esperaba {finalElemType}, se encontró {elem.Type}.");
+            if (elem.Type != ValueType.Slice)
+            {
+                AddSemanticError(line, col, 
+                    $"Se esperaba un slice en un slice multidimensional. Se encontró: {elem.Type}");
+            }
+            else
+            {
+                Slice innerSlice = elem.AsSlice();
+                if (innerSlice.NestedValueType != expectedNestedType)
+                {
+                    AddSemanticError(line, col, 
+                        $"Tipo interno no coincide. Esperado: {expectedNestedType}, Encontrado: {innerSlice.NestedValueType}");
+                }
+            }
+        }
+        else
+        {
+            if (elem.Type != expectedElementType)
+            {
+                AddSemanticError(line, col, 
+                    $"Tipo incompatible. Esperado: {expectedElementType}, Encontrado: {elem.Type}");
+            }
         }
     }
 
-    Slice newSlice = null;
+    // Construir el slice
+    Slice newSlice;
     try
     {
-        newSlice = new Slice(finalElemType, elements);
+        if (isMultiDimensional)
+        {
+            // Crear slice multidimensional con tipo base (ej: int)
+            newSlice = new Slice(ValueType.Slice, expectedNestedType);
+            foreach (var elem in elements)
+            {
+                if (elem.Type == ValueType.Slice)
+                {
+                    newSlice.Append(elem);
+                }
+            }
+        }
+        else
+        {
+            // Slice 1D
+            newSlice = new Slice(expectedElementType, elements);
+        }
     }
     catch (Exception ex)
     {
@@ -72,8 +138,16 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
         return Value.FromNil();
     }
 
-    // 6) Retornar un Value que contenga el slice
     return Value.FromSlice(newSlice);
+}
+
+private string DescribeSlice(ValueType elementType, ValueType nestedType)
+{
+    if (elementType == ValueType.Slice)
+    {
+        return $"[]{DescribeSlice(nestedType, ValueType.Nil)}";
+    }
+    return elementType.ToString();
 }
     public override Value VisitSliceFunc([NotNull] gramaticaParser.SliceFuncContext context)
 {
