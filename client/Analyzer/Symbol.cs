@@ -6,13 +6,14 @@ public enum ValueType
     Bool,
     Rune,
     Slice,
+    Struct,
     Nil
 }
 
 public class Value
 {
-    public ValueType Type { get; set; }
-    public object Data { get; set; }
+    public ValueType Type { get; private set; }
+    public object Data { get; private set; }
 
     public Value(ValueType type, object data)
     {
@@ -30,6 +31,7 @@ public class Value
     public string AsString() => (string)Data;
     public char AsRune() => (char)Data;
     public Slice AsSlice() => (Slice)Data;
+    public StructInstance AsStruct() => (StructInstance)Data;
 
     // Creadores estáticos
     public static Value FromInt(int i)       => new Value(ValueType.Int, i);
@@ -38,8 +40,10 @@ public class Value
     public static Value FromBool(bool b)     => new Value(ValueType.Bool, b);
     public static Value FromRune(char c)     => new Value(ValueType.Rune, c);
     public static Value FromSlice(Slice s)   => new Value(ValueType.Slice, s);
+    public static Value FromStruct(StructInstance s) => new Value(ValueType.Struct, s);
     public static Value FromNil()            => new Value(ValueType.Nil, null);
 
+    // Valor por defecto según tipo
     public static Value DefaultForType(ValueType t)
     {
         return t switch
@@ -50,34 +54,25 @@ public class Value
             ValueType.Bool   => FromBool(false),
             ValueType.Rune   => FromRune('\0'),
             ValueType.Slice  => FromSlice(new Slice(ValueType.Nil)),
+            ValueType.Struct => FromNil(), // ⚠️ Hasta que instancies con StructType.CreateInstance
             ValueType.Nil    => FromNil(),
             _                => FromNil()
         };
     }
     public override string ToString()
     {
-        switch (Type)
+        return Type switch
         {
-            case ValueType.Int:
-                return AsInt().ToString();
-            case ValueType.Float:
-                return AsFloat().ToString();
-            case ValueType.Bool:
-                return AsBool() ? "true" : "false";
-            case ValueType.String:
-                return AsString();
-            case ValueType.Rune:
-                return AsRune().ToString();
-            case ValueType.Slice:
-                {
-                    // Llamamos a Slice.ToString()
-                    Slice sliceData = AsSlice();
-                    return sliceData == null ? "[]" : sliceData.ToString();
-                }
-            case ValueType.Nil:
-            default:
-                return "nil";
-        }
+            ValueType.Int    => AsInt().ToString(),
+            ValueType.Float  => AsFloat().ToString("0.0#"),
+            ValueType.Bool   => AsBool() ? "true" : "false",
+            ValueType.String => $"\"{AsString()}\"",
+            ValueType.Rune   => $"'{AsRune()}'",
+            ValueType.Slice  => AsSlice()?.ToString() ?? "[]",
+            ValueType.Struct => AsStruct()?.ToString() ?? "nil",
+            ValueType.Nil    => "nil",
+            _                => "nil"
+        };
     }
 
     private bool ValidateType(ValueType type, object data)
