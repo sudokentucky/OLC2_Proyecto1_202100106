@@ -18,6 +18,8 @@ SLICES                  : 'slices';
 STRINGS                 : 'strings';
 JOIN                    : 'join';
 INDEX                   : 'Index';
+STRUCT                  : 'struct';
+FUNC                    : 'func';
 
 INT_TYPE                 : 'int';
 FLOAT64_TYPE             : 'float64';
@@ -71,7 +73,7 @@ COMENTARIO_MULTILINEA    : '/*' .*? '*/' -> skip ;
 
 
 program
-    : instruction* EOF
+    : (structDecl | funcDecl |instruction)* EOF
     ;
 
 instruction
@@ -88,6 +90,34 @@ instruction
     | breakStmt
     ;
 
+funcDecl
+    : FUNC IDENTIFIER PARENTESIS_IZQ paramsList? PARENTESIS_DER typeSpec? bloque
+    ;
+
+paramsList
+    : param (COMA param)*
+    ;
+
+param
+    : IDENTIFIER typeSpec
+    ;
+
+structDecl
+    : STRUCT IDENTIFIER LLAVE_IZQ (fieldDecl)+ LLAVE_DER PUNTO_Y_COMA?  // Al menos un campo
+    ;
+
+fieldDecl
+    : typeSpec IDENTIFIER PUNTO_Y_COMA  // Definición de campo: <tipo> <nombre>;
+    ;
+
+structLiteral
+    : LLAVE_IZQ fieldValue (COMA fieldValue)* COMA? LLAVE_DER
+    ;
+
+fieldValue
+    : IDENTIFIER DOS_PUNTOS expresion
+    ;
+ 
 bloque
     : LLAVE_IZQ instruction* LLAVE_DER
     ;
@@ -158,8 +188,10 @@ elseStmt
 
 declaracion
     : VAR IDENTIFIER typeSpec? (ASIGNACION expresion)? PUNTO_Y_COMA?
+    | IDENTIFIER IDENTIFIER ASIGNACION structLiteral PUNTO_Y_COMA? // Para: Persona p = {...}
+    | VAR IDENTIFIER ASIGNACION FUNC PARENTESIS_IZQ paramsList? PARENTESIS_DER typeSpec? bloque PUNTO_Y_COMA? // Para: var nombre = func() {...}
     ;
-
+    
 assignacion
     : IDENTIFIER (ASIGNACION | ASIGNACIO_INCREMENTO | ASIGNACIO_DECREMENTO) expresion PUNTO_Y_COMA?
     ;
@@ -226,20 +258,24 @@ typeSpec
     | STRING_TYPE
     | BOOL_TYPE
     | RUNE_TYPE
+    | IDENTIFIER
     | sliceType
     ;
 
 sliceLiteral
-    : CORCHETE_IZQ CORCHETE_DER typeSpec? 
+    : CORCHETE_IZQ CORCHETE_DER typeSpec  // typeSpec es obligatorio
       LLAVE_IZQ (expresion (COMA expresion)*)? LLAVE_DER
     ;
 
-primary: IDENTIFIER
+
+primary: IDENTIFIER (CORCHETE_IZQ expresion CORCHETE_DER)* (PUNTO IDENTIFIER)*
+       | IDENTIFIER PARENTESIS_IZQ argumentList? PARENTESIS_DER  // Llamada a función
        | RUNE_LIT
        | INT_LIT
        | FLOAT_LIT
        | STRING_LIT
        | PARENTESIS_IZQ expresion PARENTESIS_DER
        | sliceLiteral
+       | structLiteral
        ;
 
