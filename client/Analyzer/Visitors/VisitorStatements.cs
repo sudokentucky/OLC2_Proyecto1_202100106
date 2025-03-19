@@ -5,40 +5,83 @@ using static gramaticaParser;
 public partial class Visitor
 {
 public override Value VisitDeclaracion([NotNull] DeclaracionContext context)
+{
+    int line = context.Start.Line;
+    int column = context.Start.Column;
+    string varName; // Declarada una sola vez aquí
+    
+    // Verificar si es una declaración con sintaxis especial para structs: "Persona p = {...}"
+    if (context.IDENTIFIER().Length > 1)
     {
-        int line = context.Start.Line;
-        int column = context.Start.Column;
-        string varName = context.IDENTIFIER().GetText();
-
-        string? typeSpec = context.typeSpec() != null ? context.typeSpec().GetText() : null;
-
-        Value initialValue;
-        if (context.ASIGNACION() != null)
+        string typeName = context.IDENTIFIER(0).GetText();
+        varName = context.IDENTIFIER(1).GetText(); // Asignación, no declaración
+        
+        // Verificar si es un tipo de struct válido
+        try {
+            StructType structType = table.GetStruct(typeName);
+            
+            // Establecer el tipo de struct actual para que VisitStructLiteral pueda usarlo
+            currentStructTypeName = typeName;
+            
+            // Evaluar la expresión (literal de struct)
+            Value structValue = Visit(context.expresion());
+            currentStructTypeName = null; // Limpiar después de usar
+            
+            // Declarar la variable
+            currentEnv.DeclareVariable(varName, structValue, line, column);
+            return structValue;
+        } 
+        catch (Exception ex) {
+            AddSemanticError(line, column, $"Error declarando struct: {ex.Message}");
+            return Value.FromNil();
+        }
+    }
+    
+    // Declaración normal "var nombre tipo = valor"
+    varName = context.IDENTIFIER(0).GetText(); // Asignación, no declaración
+    
+    // Verificar si hay un tipo especificado
+    string typeSpec = null;
+    if (context.typeSpec() != null) {
+        typeSpec = context.typeSpec().GetText();
+        
+        // Comprobar si es un tipo de struct
+        if (table.IsStructType(typeSpec)) {
+            currentStructTypeName = typeSpec;
+        }
+    }
+    
+    Value initialValue;
+    if (context.ASIGNACION() != null)
+    {
+        initialValue = Visit(context.expresion());
+    }
+    else
+    {
+        if (typeSpec != null)
         {
-            initialValue = Visit(context.expresion());
+            initialValue = GetDefaultValueForType(typeSpec);
         }
         else
         {
-            if (typeSpec != null)
-            {
-                initialValue = GetDefaultValueForType(typeSpec);
-            }
-            else
-            {
-                initialValue = new Value(ValueType.Nil, null);
-            }
+            initialValue = new Value(ValueType.Nil, null);
         }
-
-        try
-        {
-            currentEnv.DeclareVariable(varName, initialValue, line, column, "Global");
-        }
-        catch (Exception ex)
-        {
-            AddSemanticError(line, column, ex.Message);
-        }
-        return initialValue;
     }
+    
+    // Limpiar el nombre del tipo de struct
+    currentStructTypeName = null;
+    
+    try
+    {
+        currentEnv.DeclareVariable(varName, initialValue, line, column, "Global");
+    }
+    catch (Exception ex)
+    {
+        AddSemanticError(line, column, ex.Message);
+    }
+    
+    return initialValue;
+}
 private Value GetDefaultValueForType(string declaredType)
 {
     switch (declaredType)
@@ -66,20 +109,13 @@ private Value GetDefaultValueForType(string declaredType)
 
 public override Value VisitPrintStmt([NotNull] PrintStmtContext context)
     {
-        // Caso sin argumentos
         if (context.argumentList() == null || context.argumentList().expresion().Length == 0)
         {
             Output += "\n";
             return null;
         }
-
-        // Obtener y evaluar los argumentos
         var args = VisitArgumentList(context.argumentList());
-
-        // Convertir a string usando Value.ToString()
         string outputLine = string.Join(" ", args.Select(v => v.ToString()));
-
-        // Agregar al output con salto de línea
         Output += outputLine + "\n";
         
         return null;
