@@ -28,7 +28,6 @@ public static class SliceOperations
         if (slice.ElementType != ValueType.String)
             throw new Exception("La función Join solo es válida para slices de strings.");
         
-        // Extrae las cadenas de cada Value.
         var stringValues = slice.Elements.Select(v => v.AsString());
         return string.Join(separator, stringValues);
     }
