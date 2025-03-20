@@ -1,16 +1,22 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 public class Function
 {
-    // Propiedades básicas
     public string Name { get; }
     public List<(string Name, ValueType Type)> Parameters { get; } = new List<(string, ValueType)>();
     public ValueType ReturnType { get; set; } = ValueType.Nil;
     public gramaticaParser.BloqueContext Body { get; }
     
-    // Información de posición para mensajes de error
     public int Line { get; }
     public int Column { get; }
     
-    // Constructor mejorado con información de posición
+    public bool IsStructMethod { get; set; } = false;
+    public string StructType { get; set; }
+    public string ReceiverName { get; set; }
+    public bool IsPointerReceiver { get; set; } = false;
+    
     public Function(string name, gramaticaParser.BloqueContext body, int line = 0, int column = 0)
     {
         Name = name;
@@ -19,13 +25,11 @@ public class Function
         Column = column;
     }
     
-    // Método para validar si un parámetro ya existe
     public bool HasParameter(string paramName)
     {
         return Parameters.Any(p => p.Name == paramName);
     }
     
-    // Método para añadir un parámetro con validación
     public void AddParameter(string name, ValueType type)
     {
         if (HasParameter(name))
@@ -34,7 +38,6 @@ public class Function
         Parameters.Add((name, type));
     }
     
-    // Método para verificar compatibilidad de argumentos
     public bool AreArgumentsCompatible(Value[] arguments)
     {
         if (arguments.Length != Parameters.Count)
@@ -42,7 +45,6 @@ public class Function
             
         for (int i = 0; i < Parameters.Count; i++)
         {
-            // Verificar tipos (excepto para structs y slices que son por referencia)
             if (arguments[i].Type != Parameters[i].Type && 
                 !(Parameters[i].Type == ValueType.Struct && arguments[i].Type == ValueType.Struct) &&
                 !(Parameters[i].Type == ValueType.Slice && arguments[i].Type == ValueType.Slice))
@@ -54,12 +56,15 @@ public class Function
         return true;
     }
     
-    // ToString para facilitar depuración
     public override string ToString()
     {
+        string receiverStr = IsStructMethod 
+            ? $"({ReceiverName} {(IsPointerReceiver ? "*" : "")}{StructType}) " 
+            : "";
+            
         string paramStr = string.Join(", ", Parameters.Select(p => $"{p.Name} {p.Type}"));
         string returnStr = ReturnType == ValueType.Nil ? "" : $" {ReturnType}";
         
-        return $"func {Name}({paramStr}){returnStr}";
+        return $"func {receiverStr}{Name}({paramStr}){returnStr}";
     }
 }
