@@ -8,44 +8,100 @@ public override Value VisitDeclaracion([NotNull] DeclaracionContext context)
 {
     int line = context.Start.Line;
     int column = context.Start.Column;
-    string varName; // Declarada una sola vez aquí
+    string varName; 
     
-    // Verificar si es una declaración con sintaxis especial para structs: "Persona p = {...}"
     if (context.IDENTIFIER().Length > 1)
     {
         string typeName = context.IDENTIFIER(0).GetText();
-        varName = context.IDENTIFIER(1).GetText(); // Asignación, no declaración
+        varName = context.IDENTIFIER(1).GetText();
         
-        // Verificar si es un tipo de struct válido
+        Console.WriteLine($"DEBUG: Declaración con dos identificadores: tipo='{typeName}', nombre='{varName}'");
+        
         try {
             StructType structType = table.GetStruct(typeName);
+            Console.WriteLine($"DEBUG: Tipo de struct '{typeName}' encontrado en la tabla");
             
-            // Establecer el tipo de struct actual para que VisitStructLiteral pueda usarlo
             currentStructTypeName = typeName;
+            Console.WriteLine($"DEBUG: Estableciendo currentStructTypeName='{typeName}' antes de evaluar");
             
-            // Evaluar la expresión (literal de struct)
-            Value structValue = Visit(context.expresion());
-            currentStructTypeName = null; // Limpiar después de usar
+            Value structValue;
             
-            // Declarar la variable
+            if (context.expresion() != null)
+            {
+                Console.WriteLine($"DEBUG: Evaluando expresión para struct '{typeName}'");
+                try {
+                    structValue = Visit(context.expresion());
+                    Console.WriteLine($"DEBUG: Valor evaluado para '{varName}': Type = {structValue.Type}");
+                }
+                catch (Exception ex) {
+                    Console.WriteLine($"ERROR: Excepción evaluando expresión para struct: {ex.Message}");
+                    Console.WriteLine($"DEBUG: Creando instancia vacía debido al error");
+                    
+                    StructInstance instance = new StructInstance(structType);
+                    
+                    foreach (var field in structType.Fields)
+                    {
+                        ValueType fieldType = field.Value;
+                        Value defaultValue = GetDefaultValueForFieldType(fieldType);
+                        instance.SetField(field.Key, defaultValue);
+                        Console.WriteLine($"DEBUG: Inicializado campo '{field.Key}' con valor predeterminado para {fieldType}");
+                    }
+                    
+                    structValue = Value.FromStruct(instance);
+                }
+            }
+            else
+            {
+                Console.WriteLine($"DEBUG: No hay expresión inicial, creando instancia vacía");
+                
+                StructInstance instance = new StructInstance(structType);
+                
+                foreach (var field in structType.Fields)
+                {
+                    ValueType fieldType = field.Value;
+                    Value defaultValue = GetDefaultValueForFieldType(fieldType);
+                    instance.SetField(field.Key, defaultValue);
+                    Console.WriteLine($"DEBUG: Inicializado campo '{field.Key}' con valor predeterminado para {fieldType}");
+                }
+                
+                structValue = Value.FromStruct(instance);
+            }
+            
+            currentStructTypeName = null;
+            if (structValue.Type != ValueType.Struct)
+            {
+                Console.WriteLine($"DEBUG: El valor evaluado no es un struct, creando instancia vacía");
+                StructInstance instance = new StructInstance(structType);
+                
+                foreach (var field in structType.Fields)
+                {
+                    ValueType fieldType = field.Value;
+                    Value defaultValue = GetDefaultValueForFieldType(fieldType);
+                    instance.SetField(field.Key, defaultValue);
+                    Console.WriteLine($"DEBUG: Inicializado campo '{field.Key}' con valor predeterminado para {fieldType}");
+                }
+                
+                structValue = Value.FromStruct(instance);
+            }
+            
             currentEnv.DeclareVariable(varName, structValue, line, column);
+            Console.WriteLine($"DEBUG: Variable struct '{varName}' declarada exitosamente");
+            
             return structValue;
         } 
         catch (Exception ex) {
             AddSemanticError(line, column, $"Error declarando struct: {ex.Message}");
+            Console.WriteLine($"ERROR: {ex.Message}");
+            currentStructTypeName = null;
             return Value.FromNil();
         }
     }
     
-    // Declaración normal "var nombre tipo = valor"
-    varName = context.IDENTIFIER(0).GetText(); // Asignación, no declaración
-    
-    // Verificar si hay un tipo especificado
+    varName = context.IDENTIFIER(0).GetText(); 
     string typeSpec = null;
     if (context.typeSpec() != null) {
         typeSpec = context.typeSpec().GetText();
         
-        // Comprobar si es un tipo de struct
         if (table.IsStructType(typeSpec)) {
             currentStructTypeName = typeSpec;
         }
@@ -68,7 +124,6 @@ public override Value VisitDeclaracion([NotNull] DeclaracionContext context)
         }
     }
     
-    // Limpiar el nombre del tipo de struct
     currentStructTypeName = null;
     
     try
@@ -97,6 +152,90 @@ private Value GetDefaultValueForType(string declaredType)
         case "rune":
             return new Value(ValueType.Rune, '\0');
         default:
+            if (declaredType.StartsWith("[]"))
+            {
+                string elementType = declaredType.Substring(2);
+                Console.WriteLine($"DEBUG: Creando slice vacío con tipo de elemento: {elementType}");
+                return new Value(ValueType.Slice, new Slice(GetTypeFromString(elementType)));
+            }
+            
+            try
+            {
+                if (table.IsStructType(declaredType))
+                {
+                    Console.WriteLine($"DEBUG: Creando instancia de struct vacía del tipo: {declaredType}");
+                    StructType structType = table.GetStruct(declaredType);
+                    StructInstance instance = new StructInstance(structType);
+                    
+                    foreach (var field in structType.Fields)
+                    {
+                        ValueType fieldType = field.Value;
+                        Value defaultValue = GetDefaultValueForFieldType(fieldType);
+                        instance.SetField(field.Key, defaultValue);
+                        Console.WriteLine($"DEBUG: Inicializado campo '{field.Key}' con valor predeterminado para {fieldType}");
+                    }
+                    
+                    return Value.FromStruct(instance);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR: No se pudo crear instancia para el tipo '{declaredType}': {ex.Message}");
+            }
+            
+            Console.WriteLine($"DEBUG: Tipo desconocido: {declaredType}, retornando Nil");
+            return new Value(ValueType.Nil, null);
+    }
+}
+
+//  obtener un ValueType a partir de un string
+private ValueType GetTypeFromString(string typeName)
+{
+    switch (typeName)
+    {
+        case "int": return ValueType.Int;
+        case "float64": return ValueType.Float;
+        case "string": return ValueType.String;
+        case "bool": return ValueType.Bool;
+        case "rune": return ValueType.Rune;
+        default: return ValueType.Nil;
+    }
+}
+ private string GetTypeNameFromValueType(ValueType type)
+    {
+        switch (type)
+        {
+            case ValueType.Int: return "int";
+            case ValueType.Float: return "float64";
+            case ValueType.String: return "string";
+            case ValueType.Bool: return "bool";
+            case ValueType.Rune: return "rune";
+            case ValueType.Struct: return "struct"; 
+            case ValueType.Slice: return "slice"; 
+            case ValueType.Nil: return "nil";
+            default: return "unknown";
+        }
+    }
+// valores por defecto según el ValueType
+private Value GetDefaultValueForFieldType(ValueType type)
+{
+    switch (type)
+    {
+        case ValueType.Int:
+            return new Value(ValueType.Int, 0);
+        case ValueType.Float:
+            return new Value(ValueType.Float, 0.0);
+        case ValueType.String:
+            return new Value(ValueType.String, "");
+        case ValueType.Bool:
+            return new Value(ValueType.Bool, false);
+        case ValueType.Rune:
+            return new Value(ValueType.Rune, '\0');
+        case ValueType.Slice:
+            return new Value(ValueType.Slice, new Slice(ValueType.Nil));
+        case ValueType.Struct:
+            return new Value(ValueType.Nil, null);
+        default:
             return new Value(ValueType.Nil, null);
     }
 }
@@ -105,20 +244,6 @@ private Value GetDefaultValueForType(string declaredType)
     public override Value VisitExprStmt([NotNull] ExprStmtContext context)
     {
         return Visit(context.expresion());
-    }
-
-public override Value VisitPrintStmt([NotNull] PrintStmtContext context)
-    {
-        if (context.argumentList() == null || context.argumentList().expresion().Length == 0)
-        {
-            Output += "\n";
-            return null;
-        }
-        var args = VisitArgumentList(context.argumentList());
-        string outputLine = string.Join(" ", args.Select(v => v.ToString()));
-        Output += outputLine + "\n";
-        
-        return null;
     }
 
      private Value[] VisitArgumentList(ArgumentListContext ctx)
@@ -139,7 +264,6 @@ public override Value VisitPrintStmt([NotNull] PrintStmtContext context)
     
     Value lastResult = null;
     
-    // Ejecutar todas las instrucciones del bloque
     foreach (var instruction in context.instruction())
     {
         lastResult = Visit(instruction);
