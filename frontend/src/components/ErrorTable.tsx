@@ -1,40 +1,8 @@
-import React, { useEffect, useState } from "react";
-
-interface Error {
-  type: string;
-  description: string;
-  file: number;
-  column: number;
-}
+import React from "react";
+import { useErrors } from "../hooks/useErrors"; // Asegúrate que el path sea el correcto
 
 const ErrorTable: React.FC = () => {
-  const [errors, setErrors] = useState<Error[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchErrors = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch("http://localhost:3000/errores");
-        if (!response.ok) {
-          throw new Error("Error al obtener la lista de errores.");
-        }
-        const data = await response.json();
-        setErrors(data);
-      } catch (error) {
-        if (error instanceof Error) {
-          setErrorMessage(error.message);
-        } else {
-          setErrorMessage("Error desconocido.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchErrors();
-  }, []);
+  const { errors, loading, errorMessage } = useErrors();
 
   if (loading) {
     return <p className="text-buffy text-center">Cargando la tabla de errores...</p>;
@@ -69,7 +37,7 @@ const ErrorTable: React.FC = () => {
                 >
                   <td className="border border-nosferatu px-4 py-2 text-center">{error.type}</td>
                   <td className="border border-nosferatu px-4 py-2 text-center">{error.description}</td>
-                  <td className="border border-nosferatu px-4 py-2 text-center">{error.file}</td>
+                  <td className="border border-nosferatu px-4 py-2 text-center">{error.line}</td>
                   <td className="border border-nosferatu px-4 py-2 text-center">{error.column}</td>
                 </tr>
               ))
