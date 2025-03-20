@@ -9,22 +9,22 @@ export const useDotCode = () => {
     const fetchDotCode = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:5011/compile/generateDot"); // Llamada al backend
+        const response = await fetch("http://localhost:5011/compile/generateDot"); 
         if (!response.ok) {
           throw new Error("Error al obtener el código DOT.");
         }
-        const data = await response.text(); // Recibe el código DOT
+        const data = await response.text(); 
         console.log("Respuesta del servidor:");
-        console.log(data); // Verificar qué devuelve el servidor
-        setDotCode(data);  // Establecer el código DOT
+        console.log(data); 
+        setDotCode(data);  
       } catch (error) {
         if (error instanceof Error) {
-          setErrorMessage(error.message); // Captura errores
+          setErrorMessage(error.message); 
         } else {
           setErrorMessage("Error desconocido.");
         }
       } finally {
-        setLoading(false); // Indica que terminó de cargar
+        setLoading(false); 
       }
     };
   
