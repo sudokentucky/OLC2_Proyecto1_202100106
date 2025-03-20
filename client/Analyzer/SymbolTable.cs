@@ -4,10 +4,10 @@ using System.Collections.Generic;
 public class SymbolTableEntry
 {
     public string ID { get; set; }
-    public string SymbolType { get; set; }  // "Struct", "Variable", etc.
-    public string DataType { get; set; }   // Tipo de dato (ej: "int", "Persona")
+    public string SymbolType { get; set; }  
+    public string DataType { get; set; }   
     public string Scope { get; set; }
-    public object Value { get; set; }      // StructType (definición) o StructInstance (valor)
+    public object Value { get; set; }     
     public int Line { get; set; }
     public int Column { get; set; }
     public bool IsStructDefinition { get; set; }
@@ -48,7 +48,6 @@ public class SymbolTable
     }
     public void AddFunction(Function function)
     {
-        // Validar que el nombre no exista como struct o función
         if (structs.ContainsKey(function.Name) || functions.ContainsKey(function.Name))
             throw new Exception($"El nombre '{function.Name}' ya está definido");
         
@@ -73,7 +72,6 @@ public class SymbolTable
         return functions[name];
     }
     
-    // Verificar si una función existe
     public bool IsFunctionDefined(string name)
     {
         return functions.ContainsKey(name);
@@ -117,7 +115,6 @@ public class SymbolTable
     }
     public void AddEntry(SymbolTableEntry entry)
     {
-        // Validar structs duplicados
         if (entry.IsStructDefinition && structs.ContainsKey(entry.ID))
             throw new Exception($"Struct '{entry.ID}' ya existe");
         
