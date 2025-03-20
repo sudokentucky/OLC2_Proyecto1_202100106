@@ -5,7 +5,6 @@ using static gramaticaParser;
 
 public partial class Visitor
 {
-    // Clase para manejar el return en las funciones
     public class ReturnException : Exception
     {
         public Value Value { get; }
@@ -23,10 +22,8 @@ public partial class Visitor
         
         string functionName = context.IDENTIFIER().GetText();
         
-        // Crear la función
         Function function = new Function(functionName, context.bloque(), line, column);
         
-        // Procesar parámetros
         if (context.paramsList() != null)
         {
             foreach (var param in context.paramsList().param())
@@ -42,13 +39,11 @@ public partial class Visitor
             }
         }
         
-        // Procesar tipo de retorno
         if (context.typeSpec() != null)
         {
             function.ReturnType = GetTypeFromTypeSpec(context.typeSpec());
         }
         
-        // Registrar la función en la tabla global
         try {
             table.AddFunction(function);
         } catch (Exception ex) {
@@ -57,15 +52,28 @@ public partial class Visitor
         
         return Value.FromNil();
     }
-    
-    // Para llamadas a funciones (se usa en VisitPrimary)
+    public override Value VisitFunctCall([NotNull] gramaticaParser.FunctCallContext context)
+    {
+        int line = context.Start.Line;
+        int column = context.Start.Column;
+        
+        string funcName = context.IDENTIFIER().GetText();
+        Value[] arguments = new Value[0];
+        if (context.argumentList() != null)
+        {
+            var exprs = context.argumentList().expresion();
+            arguments = new Value[exprs.Length];
+            for (int i = 0; i < exprs.Length; i++)
+                arguments[i] = Visit(exprs[i]);
+        }
+        
+        return CallFunction(funcName, arguments, line, column);
+    }
+
     public Value CallFunction(string functionName, Value[] arguments, int line, int column)
     {
         try {
-            // Obtener la definición de la función
             Function function = table.GetFunction(functionName);
-            
-            // Verificar número de argumentos
             if (arguments.Length != function.Parameters.Count)
             {
                 AddSemanticError(line, column, 
@@ -74,16 +82,13 @@ public partial class Visitor
                 return Value.FromNil();
             }
             
-            // Crear nuevo entorno para la función
-            Environment functionEnv = new Environment(table, null); // Ámbito global para parámetros
+            Environment functionEnv = new Environment(table, null); 
             
-            // Registrar parámetros en el nuevo entorno
             for (int i = 0; i < function.Parameters.Count; i++)
             {
                 var (paramName, paramType) = function.Parameters[i];
                 Value argValue = arguments[i];
                 
-                // Verificar tipos compatibles
                 if (!AreTypesCompatible(paramType, argValue.Type))
                 {
                     AddSemanticError(line, column, 
@@ -94,11 +99,9 @@ public partial class Visitor
                 functionEnv.DeclareVariable(paramName, argValue, line, column, functionName);
             }
             
-            // Guardar entorno actual y establecer el nuevo
             Environment previousEnv = currentEnv;
             currentEnv = functionEnv;
             
-            // Ejecutar el cuerpo de la función
             Value returnValue = Value.FromNil();
             try {
                 Visit(function.Body);
@@ -106,7 +109,6 @@ public partial class Visitor
             catch (ReturnException rex) {
                 returnValue = rex.Value;
                 
-                // Verificar tipo de retorno
                 if (!AreTypesCompatible(function.ReturnType, returnValue.Type))
                 {
                     AddSemanticError(line, column, 
@@ -115,7 +117,6 @@ public partial class Visitor
                 }
             }
             
-            // Restaurar entorno anterior
             currentEnv = previousEnv;
             
             return returnValue;
@@ -126,13 +127,11 @@ public partial class Visitor
         }
     }
     
-    // Método auxiliar para verificar compatibilidad de tipos
     private bool AreTypesCompatible(ValueType expected, ValueType actual)
     {
         if (expected == actual)
             return true;
             
-        // Para structs y slices que se pasan por referencia
         if (expected == ValueType.Struct && actual == ValueType.Struct)
             return true;
             
