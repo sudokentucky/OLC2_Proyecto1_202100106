@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from "react";
 import useLineCounter from "../hooks/useLineCounter";
 import Message from "../interface/Message";
 
-// Definir el tipo de las props que recibe CommandExecution
 interface CommandExecutionProps {
   inputText: string;
   setInputText: (text: string) => void;
@@ -143,6 +142,7 @@ function CommandExecution({
                   }}
                 />
               </div>
+              
             </div>
           </div>
 
@@ -158,10 +158,10 @@ function CommandExecution({
         </div>
       </div>
 
-      <footer className="py-4 text-center text-sm text-gray-500 w-full">
-        © {new Date().getFullYear()} Keneth Lopez. 
-        Todos los derechos reservados.
-      </footer>
+      <footer className="fixed bottom-0 left-0 w-full py-4 text-center text-sm text-gray-500">
+  © {new Date().getFullYear()} Keneth Lopez. Todos los derechos reservados.
+</footer>
+
     </div>
   );
 }
