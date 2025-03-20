@@ -27,46 +27,91 @@ public class Compile : Controller
         public required string code { get; set; }
     }
 
-    [HttpPost]
-    public IActionResult Post([FromBody] CompileRequest request)
+[HttpPost]
+public IActionResult Post([FromBody] CompileRequest request)
+{
+    if (!ModelState.IsValid)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(new { error = "Invalid request" });
-        }
+        return BadRequest(new { error = "Solicitud inválida." });
+    }
 
-        lastErrors.Clear();
-        lastSymbolTable = new SymbolTable();
+    lastErrors.Clear();
+    lastSymbolTable = new SymbolTable();
 
+    try
+    {
         var inputStream = new AntlrInputStream(request.code);
 
-        // 2. Crear lexer y parser
+        // Lexer y parser
         var lexer = new gramaticaLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
         var parser = new gramaticaParser(tokens);
+
         var errorListener = new ErrorListener();
         lexer.RemoveErrorListeners();
         parser.RemoveErrorListeners();
         lexer.AddErrorListener(errorListener);
         parser.AddErrorListener(errorListener);
 
+        // 1. Parsear el programa
         var tree = parser.program();
+
+        // 2. Capturar errores de sintaxis
         var parseErrors = errorListener.GetErrors();
 
+        // 3. Crear y ejecutar el visitor
         var visitor = new Visitor();
         visitor.Visit(tree);
 
+        // 4. Capturar errores semánticos desde el visitor
+        var semanticErrors = visitor.GetSemanticErrors();
+
         lastErrors.AddRange(parseErrors);
+        lastErrors.AddRange(semanticErrors);
+
+        if (lastErrors.Count > 0)
+        {
+            _logger.LogWarning("Errores encontrados durante la compilación.");
+
+            var firstError = lastErrors[0];
+
+            var firstErrorMessage = $"Línea {firstError.Line}, Columna {firstError.Column}: " +
+                                    $"{firstError.Description ?? firstError.Description}";
+
+            return BadRequest(new
+            {
+                error = "Errores encontrados durante la compilación.",
+                firstError = firstErrorMessage,
+                errors = lastErrors.Select(e =>
+                    $"Línea {e.Line}, Columna {e.Column}: {e.Description ?? e.Description}").ToList()
+            });
+        }
+
         lastSymbolTable = visitor.GetSymbolTable();
 
-        return Ok(new { result = visitor.Output });
+        return Ok(new
+        {
+            result = visitor.Output ?? "Compilación completada sin errores.",
+            symbolCount = lastSymbolTable.GetAllEntries().Count
+        });
     }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error inesperado durante la compilación.");
+
+        // Error inesperado en el servidor
+        return StatusCode(500, new
+        {
+            error = "Error interno en el compilador.",
+            details = ex.Message
+        });
+    }
+}
 
 
     [HttpGet("errors")]
     public IActionResult GetErrors()
     {
-        // Retornamos la lista de errores en JSON
         return Ok(lastErrors);
     }
 
@@ -75,7 +120,6 @@ public IActionResult GetSymbols()
 {
     var entries = lastSymbolTable.GetAllEntries();
     
-    // Transformar las entradas para una mejor serialización JSON
     var formattedEntries = entries.Select(e => new {
         ID = e.ID,
         Type = e.SymbolType,
@@ -89,7 +133,6 @@ public IActionResult GetSymbols()
     return Ok(formattedEntries);
 }
 
-// Método auxiliar para formatear los valores de los símbolos
 private string FormatSymbolValue(SymbolTableEntry entry)
 {
     if (entry.Value == null)
@@ -109,13 +152,39 @@ private string FormatFunction(Function fn)
     if (fn == null)
         throw new ArgumentNullException(nameof(fn));
 
-    // Verifica que Parameters no sea nulo, y en caso de que alguna propiedad de p pueda ser nula.
     string paramStr = string.Join(", ", fn.Parameters?.Select(p => $"{p.Name ?? "null"} {p.Type}") 
                                         ?? Enumerable.Empty<string>());
-    // Verifica también fn.ReturnType, agregando una verificación nula
     string returnStr = (fn.ReturnType == null || fn.ReturnType == ValueType.Nil) ? "void" : (fn.ReturnType.ToString() ?? "void");
     
     string result = $"func {fn.Name ?? "unnamed"}({paramStr}) -> {returnStr}";
     return result;
 }
+/*
+[HttpGet("generateDot")]
+public IActionResult GenerateDot()
+{
+    try
+    {
+        var inputStream = new AntlrInputStream("your code here... o pásalo de algún lado");
+        var lexer = new gramaticaLexer(inputStream);
+        var tokens = new CommonTokenStream(lexer);
+        var parser = new gramaticaParser(tokens);
+
+        var tree = parser.program();
+
+        var astBuilder = new AstBuilderVisitor();
+        var rootNode = astBuilder.Visit(tree);
+
+        var dotGenerator = new DotGenerator();
+        var dotCode = dotGenerator.GenerateDot(rootNode);
+
+        return Content(dotCode, "text/plain");
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, $"Error generando el DOT: {ex.Message}");
+    }
 }
+*/
+}
+
