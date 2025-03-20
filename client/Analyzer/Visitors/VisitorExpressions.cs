@@ -83,7 +83,7 @@ public partial class Visitor
         for (int i = 1; i < context.addExpr().Length; i++)
         {
             Value rightValue = Visit(context.addExpr(i));
-            string op = context.GetChild((i * 2) - 1).GetText(); // >, <, >=, <=
+            string op = context.GetChild((i * 2) - 1).GetText(); 
 
             leftValue = EvaluateRelational(leftValue, rightValue, op, line, column);
         }
@@ -91,105 +91,150 @@ public partial class Visitor
         return leftValue;
     }
 
-    public override Value VisitAddExpr([NotNull] AddExprContext context)
+   public override Value VisitUnaryExpr([NotNull] UnaryExprContext context)
     {
-        Value leftValue = Visit(context.mulExpr(0));
         int line = context.Start.Line;
         int column = context.Start.Column;
-
-        for (int i = 1; i < context.mulExpr().Length; i++)
-        {
-            Value rightValue = Visit(context.mulExpr(i));
-            string op = context.GetChild((i * 2) - 1).GetText(); // + o -
-            leftValue = EvaluateAddOrSub(leftValue, rightValue, op, line, column);
-        }
-
-        return leftValue;
-    }
-
-    public override Value VisitMulExpr([NotNull] MulExprContext context)
-    {
-        Value leftValue = Visit(context.unaryExpr(0));
-        int line = context.Start.Line;
-        int column = context.Start.Column;
-
-        for (int i = 1; i < context.unaryExpr().Length; i++)
-        {
-            Value rightValue = Visit(context.unaryExpr(i));
-            string op = context.GetChild((i * 2) - 1).GetText(); 
-
-            leftValue = EvaluateMulDivMod(leftValue, rightValue, op, line, column);
-        }
-
-        return leftValue;
-    }
-
-    public override Value VisitUnaryExpr([NotNull] UnaryExprContext context)
-    {
-        
-        int line = context.Start.Line;
-        int column = context.Start.Column;
+        Console.WriteLine("-------------- Visit Unario-------");
+        Console.WriteLine($"[VisitUnaryExpr] Iniciando evaluación de expresión unaria en línea {line}, columna {column}");
 
         if (context.MINUS() != null)
         {
+            Console.WriteLine($"[VisitUnaryExpr] Operador de negación '-' detectado");
             Value exprValue = Visit(context.unaryExpr());
+            Console.WriteLine($"[VisitUnaryExpr] Valor a negar: Type = {exprValue.Type}, Value = {exprValue}");
+            
             if (IsNumeric(exprValue) == 0)
             {
-                AddSemanticError(line, column,
-                    $"No se puede aplicar operador unario '-' a tipo {exprValue.Type}.");
+                string errorMsg = $"No se puede aplicar operador unario '-' a tipo {exprValue.Type}.";
+                Console.WriteLine($"[VisitUnaryExpr] Error: {errorMsg}");
+                AddSemanticError(line, column, errorMsg);
                 return new Value(ValueType.Int, 0);
             }
+            
             double val = ToDouble(exprValue);
+            Value result;
+            
             if (exprValue.Type == ValueType.Float)
-                return new Value(ValueType.Float, -val);
+                result = new Value(ValueType.Float, -val);
             else
-                return new Value(ValueType.Int, (int)(-val));
+                result = new Value(ValueType.Int, (int)(-val));
+                
+            Console.WriteLine($"[VisitUnaryExpr] Resultado de negación: Type = {result.Type}, Value = {result}");
+            return result;
         }
         else if (context.NOT() != null)
         {
+            Console.WriteLine($"[VisitUnaryExpr] Operador de negación lógica '!' detectado");
             Value exprValue = Visit(context.unaryExpr());
+            Console.WriteLine($"[VisitUnaryExpr] Valor a negar lógicamente: Type = {exprValue.Type}, Value = {exprValue}");
+            
             if (exprValue.Type != ValueType.Bool)
             {
-                AddSemanticError(line, column,
-                    $"No se puede aplicar operador '!' a tipo {exprValue.Type}.");
+                string errorMsg = $"No se puede aplicar operador '!' a tipo {exprValue.Type}.";
+                Console.WriteLine($"[VisitUnaryExpr] Error: {errorMsg}");
+                AddSemanticError(line, column, errorMsg);
                 return new Value(ValueType.Bool, false);
             }
-            return new Value(ValueType.Bool, !exprValue.AsBool());
+            
+            Value result = new Value(ValueType.Bool, !exprValue.AsBool());
+            Console.WriteLine($"[VisitUnaryExpr] Resultado de negación lógica: Type = {result.Type}, Value = {result}");
+            return result;
         }
         else if (context.primary() != null)
         {
-            return Visit(context.primary());
+            Console.WriteLine($"[VisitUnaryExpr] Expresión primaria detectada");
+            Value result = Visit(context.primary());
+            Console.WriteLine($"[VisitUnaryExpr] Resultado de expresión primaria: Type = {result.Type}, Value = {result}");
+            return result;
         }
         else if (context.sliceFunc() != null)
         {
-            return Visit(context.sliceFunc());
+            Console.WriteLine($"[VisitUnaryExpr] Función de slice detectada");
+            Value result = Visit(context.sliceFunc());
+            Console.WriteLine($"[VisitUnaryExpr] Resultado de función de slice: Type = {result.Type}, Value = {result}");
+            return result;
         }
-        //Si no es ninguno de los anteriores es error
+        else if (context.conversionFunc() != null)
+        {
+            Console.WriteLine($"[VisitUnaryExpr] Función de conversión detectada");
+            Value result = Visit(context.conversionFunc());
+            Console.WriteLine($"[VisitUnaryExpr] Resultado de función de conversión: Type = {result.Type}, Value = {result}");
+            return result;
+        }
+        
+        Console.WriteLine($"[VisitUnaryExpr] Error: Expresión unaria desconocida");
         AddSemanticError(line, column, "Expresión unaria desconocida.");
         return Value.FromNil();
     }
+
 public override Value VisitPrimary([NotNull] PrimaryContext context)
 {
     int line = context.Start.Line;
     int column = context.Start.Column;
 
-    if (context.INT_LIT() != null)
-        return ParseIntLiteral(context.INT_LIT().GetText(), line, column);
-    else if (context.FLOAT_LIT() != null)
-        return ParseFloatLiteral(context.FLOAT_LIT().GetText(), line, column);
-    else if (context.STRING_LIT() != null)
-        return ParseStringLiteral(context.STRING_LIT().GetText(), line, column);
-    else if (context.RUNE_LIT() != null)
-        return ParseRuneLiteral(context.RUNE_LIT().GetText(), line, column);
-    else if (context.sliceLiteral() != null)
-        return Visit(context.sliceLiteral());
-    else if (context.structLiteral() != null)
-        return Visit(context.structLiteral());
-    else if (context.IDENTIFIER() != null)
-        return EvaluateIdentifier(context, line, column);
-    else if (context.expresion() != null && context.expresion().Length > 0)
-        return Visit(context.expresion(0));
+    Console.WriteLine($"[VisitPrimary] Ingresando a VisitPrimary en línea {line}, columna {column}");
 
+    if (context.functCall() != null)
+    {
+        Console.WriteLine($"[VisitPrimary] Se encontró una llamada a función.");
+        return Visit(context.functCall());
+    }
+
+    if (context.INT_LIT() != null)
+    {
+        string valueText = context.INT_LIT().GetText();
+        Console.WriteLine($"[VisitPrimary] Se encontró un literal INT: {valueText}");
+        return ParseIntLiteral(valueText, line, column);
+    }
+
+    if (context.FLOAT_LIT() != null)
+    {
+        string valueText = context.FLOAT_LIT().GetText();
+        Console.WriteLine($"[VisitPrimary] Se encontró un literal FLOAT: {valueText}");
+        return ParseFloatLiteral(valueText, line, column);
+    }
+
+    if (context.STRING_LIT() != null)
+    {
+        string valueText = context.STRING_LIT().GetText();
+        Console.WriteLine($"[VisitPrimary] Se encontró un literal STRING: {valueText}");
+        return ParseStringLiteral(valueText, line, column);
+    }
+
+    if (context.RUNE_LIT() != null)
+    {
+        string valueText = context.RUNE_LIT().GetText();
+        Console.WriteLine($"[VisitPrimary] Se encontró un literal RUNE: {valueText}");
+        return ParseRuneLiteral(valueText, line, column);
+    }
+
+    if (context.sliceLiteral() != null)
+    {
+        Console.WriteLine($"[VisitPrimary] Se encontró un slice literal.");
+        return Visit(context.sliceLiteral());
+    }
+
+    if (context.structLiteral() != null)
+    {
+        Console.WriteLine($"[VisitPrimary] Se encontró un struct literal.");
+        return Visit(context.structLiteral());
+    }
+
+    if (context.IDENTIFIER() != null && context.IDENTIFIER().Length > 0)
+    {
+        string identifierName = context.IDENTIFIER(0).GetText();
+        Console.WriteLine($"[VisitPrimary] Se encontró un IDENTIFIER: {identifierName}");
+        return EvaluateIdentifier(context, line, column);
+    }
+
+    if (context.expresion() != null && context.expresion().Length > 0)
+    {
+        Console.WriteLine($"[VisitPrimary] Se encontró una expresión entre paréntesis.");
+        return Visit(context.expresion(0));
+    }
+
+    Console.WriteLine($"[VisitPrimary] Error: Expresión primaria desconocida.");
     AddSemanticError(line, column, "Expresión primaria desconocida.");
     return new Value(ValueType.Int, 0);
 }
@@ -214,9 +259,7 @@ private Value ParseStringLiteral(string text, int line, int column)
 {
     if (text.Length >= 2 && text.StartsWith("\"") && text.EndsWith("\""))
     {
-        // Eliminar comillas del inicio y final
         text = text.Substring(1, text.Length - 2);
-        // Procesar secuencias de escape
         text = text.Replace("\\n", "\n")
                    .Replace("\\r", "\r")
                    .Replace("\\t", "\t")
@@ -256,29 +299,58 @@ private Value ParseRuneLiteral(string text, int line, int column)
 
 private Value EvaluateIdentifier(PrimaryContext context, int line, int column)
 {
-    string varName = context.IDENTIFIER(0).GetText();
-
-    // Literales booleanos especiales
-    if (varName == "true")
-        return new Value(ValueType.Bool, true);
-    else if (varName == "false")
-        return new Value(ValueType.Bool, false);
-
-    // Llamada a función
-    if (context.PARENTESIS_IZQ() != null)
+    Console.WriteLine("--------- DEPURACIÓN EVALUATE_IDENTIFIER ---------");
+    Console.WriteLine($"Línea: {line}, Columna: {column}");
+    Console.WriteLine($"Texto completo: {context.GetText()}");
+    
+    // Verificación de seguridad para IDENTIFIER
+    if (context.IDENTIFIER() == null)
     {
-        Value[] arguments = EvaluateArgumentList(context);
-        return CallFunction(varName, arguments, line, column);
+        Console.WriteLine("ERROR: context.IDENTIFIER() es NULL");
+        AddSemanticError(line, column, "Error en llamada a función: Identificador no encontrado");
+        return Value.FromNil();
     }
-
+    
+    if (context.IDENTIFIER().Length == 0)
+    {
+        Console.WriteLine("ERROR: context.IDENTIFIER().Length es 0");
+        AddSemanticError(line, column, "Error en llamada a función: No hay identificadores");
+        return Value.FromNil();
+    }
+    
+    string varName = context.IDENTIFIER(0).GetText();
+    Console.WriteLine($"Nombre de variable: '{varName}'");
+    
+    // Verificar si es un valor booleano literal
+    if (varName == "true")
+    {
+        Console.WriteLine("Es un literal booleano: true");
+        return new Value(ValueType.Bool, true);
+    }
+    else if (varName == "false")
+    {
+        Console.WriteLine("Es un literal booleano: false");
+        return new Value(ValueType.Bool, false);
+    }
+    
+    Console.WriteLine($"Obteniendo valor de variable: {varName}");
     Value currentValue = GetVariableValue(varName, line, column);
+    Console.WriteLine($"Valor obtenido: {currentValue?.Type.ToString() ?? "null"}");
+    
+    Console.WriteLine($"Evaluando índices: {context.CORCHETE_IZQ()?.Length ?? 0}");
     currentValue = EvaluateIndices(currentValue, context, varName, line, column);
+    
+    Console.WriteLine($"Evaluando campos: {context.PUNTO()?.Length ?? 0}");
     currentValue = EvaluateFieldAccess(currentValue, context, varName, line, column);
+    
+    Console.WriteLine($"Valor final: {currentValue?.Type.ToString() ?? "null"}");
+    Console.WriteLine("------------------------------------------------");
     
     return currentValue;
 }
 
-private Value[] EvaluateArgumentList(PrimaryContext context)
+
+private Value[] EvaluateArgumentList(FunctCallContext context)
 {
     if (context.argumentList() != null)
     {
@@ -299,48 +371,78 @@ private Value GetVariableValue(string varName, int line, int column)
     }
     catch (Exception ex)
     {
+        Console.WriteLine($"ERROR: Variable '{varName}' no encontrada: {ex.Message}");
         AddSemanticError(line, column, ex.Message);
-        return new Value(ValueType.Int, 0);
+        return Value.FromNil();  
     }
 }
 
 private Value EvaluateIndices(Value currentValue, PrimaryContext context, string varName, int line, int column)
 {
+    Console.WriteLine($"[EvaluateIndices] Evaluando índices para la variable '{varName}' en línea {line}, columna {column}.");
+    Console.WriteLine($"[EvaluateIndices] currentValue inicial: Type = {currentValue.Type}");
+
     var indexNodes = context.CORCHETE_IZQ();
+
     if (indexNodes != null && indexNodes.Length > 0)
     {
+        Console.WriteLine($"[EvaluateIndices] Se encontraron {indexNodes.Length} índices.");
+
         var expressionList = context.expresion();
+
         for (int i = 0; i < expressionList.Length; i++)
         {
+            Console.WriteLine($"[EvaluateIndices] Evaluando expresión del índice {i}.");
+
             Value idxValue = Visit(expressionList[i]);
+
+            Console.WriteLine($"[EvaluateIndices] Valor del índice evaluado: Type = {idxValue.Type}, Value = {idxValue}");
+
             if (idxValue.Type != ValueType.Int)
             {
+                Console.WriteLine($"[EvaluateIndices] Error: El índice no es de tipo entero.");
                 AddSemanticError(line, column, "El índice debe ser de tipo entero.");
                 return new Value(ValueType.Int, 0);
             }
+
             int index = idxValue.AsInt();
+            Console.WriteLine($"[EvaluateIndices] Índice convertido a int: {index}");
+
             if (currentValue.Type != ValueType.Slice)
             {
+                Console.WriteLine($"[EvaluateIndices] Error: El valor actual no es un slice. Type = {currentValue.Type}");
                 AddSemanticError(line, column, $"El valor de '{varName}' no es indexable (no es un slice).");
                 return currentValue;
             }
+
             try
             {
                 Slice s = currentValue.AsSlice();
                 currentValue = s[index];
+
+                Console.WriteLine($"[EvaluateIndices] Valor actualizado tras acceder al índice {index}: Type = {currentValue.Type}");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[EvaluateIndices] Excepción al acceder al índice {index}: {ex.Message}");
                 AddSemanticError(line, column, ex.Message);
                 return new Value(ValueType.Int, 0);
             }
         }
     }
+    else
+    {
+        Console.WriteLine($"[EvaluateIndices] No se encontraron índices que evaluar.");
+    }
+
+    Console.WriteLine($"[EvaluateIndices] Valor final tras evaluación de índices: Type = {currentValue.Type}");
     return currentValue;
 }
 
+
 private Value EvaluateFieldAccess(Value currentValue, PrimaryContext context, string varName, int line, int column)
 {
+    Console.WriteLine("DEBUG: Iniciando EvaluateFieldAccess para variable '" + varName + "'.");
     var puntoNodes = context.PUNTO();
     var identifiers = context.IDENTIFIER();
     if (puntoNodes != null && puntoNodes.Length > 0)
@@ -350,31 +452,171 @@ private Value EvaluateFieldAccess(Value currentValue, PrimaryContext context, st
             if (i + 1 < identifiers.Length)
             {
                 string fieldName = identifiers[i + 1].GetText();
+                Console.WriteLine("DEBUG: Accediendo al campo '" + fieldName + "' del struct.");
                 if (currentValue.Type != ValueType.Struct)
                 {
-                    AddSemanticError(line, column,
-                        $"No se puede acceder a campos en un valor de tipo {currentValue.Type}");
+                    string errorMsg = $"No se puede acceder a campos en un valor de tipo {currentValue.Type}";
+                    Console.WriteLine("DEBUG: " + errorMsg);
+                    AddSemanticError(line, column, errorMsg);
                     return Value.FromNil();
                 }
                 try
                 {
                     StructInstance structInst = currentValue.AsStruct();
                     currentValue = structInst.GetField(fieldName);
+                    Console.WriteLine("DEBUG: Campo '" + fieldName + "' obtenido. Nuevo valor: " + currentValue.Type);
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine("DEBUG: Excepción al obtener el campo '" + fieldName + "': " + ex.Message);
                     AddSemanticError(line, column, ex.Message);
                     return Value.FromNil();
                 }
             }
             else
             {
-                AddSemanticError(line, column, "Error de sintaxis: se esperaba un nombre de campo después del punto.");
+                string errorMsg = "Error de sintaxis: se esperaba un nombre de campo después del punto.";
+                Console.WriteLine("DEBUG: " + errorMsg);
+                AddSemanticError(line, column, errorMsg);
                 return Value.FromNil();
             }
         }
     }
+    Console.WriteLine("DEBUG: EvaluateFieldAccess completado. Valor final: " + currentValue.Type);
     return currentValue;
+}
+
+
+public override Value VisitAssignacion([NotNull] AssignacionContext context)
+{
+    int line = context.Start.Line;
+    int column = context.Start.Column;
+    string targetIdentifier = context.IDENTIFIER().GetText();
+    Console.WriteLine("DEBUG: Iniciando asignación a '" + targetIdentifier + "'.");
+    Value rightValue = Visit(context.expresion());
+    Console.WriteLine("DEBUG: Valor derecho evaluado: " + rightValue.Type);
+
+    try
+    {
+        string op = context.GetChild(1).GetText();
+        Console.WriteLine("DEBUG: Operador de asignación: " + op);
+        
+        bool isDeclaration = op == ":=";
+        if (targetIdentifier.Contains("."))
+        {
+            Console.WriteLine("DEBUG: Asignación a campo(s) de struct detectada: " + targetIdentifier);
+            string[] parts = targetIdentifier.Split('.');
+            string structVarName = parts[0];
+            Console.WriteLine("DEBUG: Nombre de la variable struct: " + structVarName);
+
+            Value structValue = currentEnv.GetVariable(structVarName);
+            Console.WriteLine("DEBUG: Valor obtenido para '" + structVarName + "': " + structValue.Type);
+            if (structValue.Type != ValueType.Struct)
+            {
+                string errorMsg = $"{structVarName} no es un struct";
+                Console.WriteLine("DEBUG: " + errorMsg);
+                AddSemanticError(line, column, errorMsg);
+                return Value.FromNil();
+            }
+            
+            StructInstance instance = structValue.AsStruct();
+            for (int i = 1; i < parts.Length - 1; i++)
+            {
+                string fieldName = parts[i];
+                Console.WriteLine("DEBUG: Accediendo al campo anidado '" + fieldName + "'.");
+                try
+                {
+                    Value fieldValue = instance.GetField(fieldName);
+                    Console.WriteLine("DEBUG: Valor del campo '" + fieldName + "': " + fieldValue.Type);
+                    if (fieldValue.Type != ValueType.Struct)
+                    {
+                        string errorMsg = $"El campo {fieldName} no es un struct y no permite acceso anidado";
+                        Console.WriteLine("DEBUG: " + errorMsg);
+                        AddSemanticError(line, column, errorMsg);
+                        return Value.FromNil();
+                    }
+                    instance = fieldValue.AsStruct();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("DEBUG: Excepción accediendo al campo anidado '" + fieldName + "': " + ex.Message);
+                    AddSemanticError(line, column, ex.Message);
+                    return Value.FromNil();
+                }
+            }
+            
+            string finalFieldName = parts[parts.Length - 1];
+            Console.WriteLine("DEBUG: Asignando valor al campo final '" + finalFieldName + "'.");
+            try
+            {
+                instance.SetField(finalFieldName, rightValue);
+                Console.WriteLine("DEBUG: Asignación realizada exitosamente.");
+                return rightValue;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("DEBUG: Excepción al asignar al campo '" + finalFieldName + "': " + ex.Message);
+                AddSemanticError(line, column, ex.Message);
+                return Value.FromNil();
+            }
+        }
+        else
+        {
+            Console.WriteLine("DEBUG: Asignación a variable simple: " + targetIdentifier);
+            
+            if (isDeclaration)
+            {
+                Console.WriteLine($"DEBUG: Declarando nueva variable '{targetIdentifier}' con tipo {rightValue.Type}");
+                currentEnv.DeclareVariable(targetIdentifier, rightValue, line, column);
+                Console.WriteLine($"DEBUG: Variable '{targetIdentifier}' declarada exitosamente con tipo: {rightValue.Type}");
+                
+                Value storedValue = currentEnv.GetVariable(targetIdentifier);
+                Console.WriteLine($"DEBUG: Verificación - Tipo almacenado: {storedValue.Type}");
+                
+                return rightValue;
+            }
+            
+            try {
+                Value currentValue = currentEnv.GetVariable(targetIdentifier);
+                Console.WriteLine("DEBUG: Valor actual de la variable: " + currentValue.Type);
+                Value newValue = null;
+                
+                switch (op)
+                {
+                    case "=":
+                        currentEnv.SetVariable(targetIdentifier, rightValue);
+                        Console.WriteLine("DEBUG: Asignación simple '=' realizada. Nuevo valor: " + rightValue.Type);
+                        return rightValue;
+                    case "+=":
+                        newValue = ApplyPlusAssign(currentValue, rightValue, line, column);
+                        break;
+                    case "-=":
+                        newValue = ApplyMinusAssign(currentValue, rightValue, line, column);
+                        break;
+                    default:
+                        string errorMsg = $"Operador de asignación desconocido: {op}";
+                        Console.WriteLine("DEBUG: " + errorMsg);
+                        AddSemanticError(line, column, errorMsg);
+                        return currentValue;
+                }
+                
+                currentEnv.SetVariable(targetIdentifier, newValue);
+                Console.WriteLine("DEBUG: Asignación compuesta realizada. Nuevo valor: " + newValue.Type);
+                return newValue;
+            }
+            catch (Exception ex) {
+                Console.WriteLine("DEBUG: Error al obtener variable: " + ex.Message);
+                AddSemanticError(line, column, $"Variable '{targetIdentifier}' no existe.");
+                return Value.FromNil();
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("DEBUG: Excepción en VisitAssignacion: " + ex.Message);
+        AddSemanticError(line, column, ex.Message);
+        return Value.FromNil();
+    }
 }
 
 public override Value VisitTypeSpec([NotNull] gramaticaParser.TypeSpecContext context)
@@ -468,210 +710,9 @@ public override Value VisitTypeSpec([NotNull] gramaticaParser.TypeSpecContext co
         }
     }
 
-    private Value EvaluateAddOrSub(Value left, Value right, string op, int line, int col)
-    {
-        if (op == "+")
-        {
-            if (IsNumeric(left) != 0 && IsNumeric(right) != 0)
-            {
-                double sum = ToDouble(left) + ToDouble(right);
-                if (left.Type == ValueType.Int && right.Type == ValueType.Int)
-                {
-                    return new Value(ValueType.Int, (int)sum);
-                }
-                else
-                {
-                    return new Value(ValueType.Float, sum);
-                }
-            }
-            else if (left.Type == ValueType.String && right.Type == ValueType.String)
-            {
-                return new Value(ValueType.String, left.AsString() + right.AsString());
-            }
-            else
-            {
-                AddSemanticError(line, col,
-                    $"No se puede aplicar '+' entre {left.Type} y {right.Type}.");
-                return new Value(ValueType.Int, 0);
-            }
-        }
-        else // op == "-"
-        {
-            if (IsNumeric(left) != 0 && IsNumeric(right) != 0)
-            {
-                double diff = ToDouble(left) - ToDouble(right);
-                if (left.Type == ValueType.Int && right.Type == ValueType.Int)
-                {
-                    return new Value(ValueType.Int, (int)diff);
-                }
-                else
-                {
-                    return new Value(ValueType.Float, diff);
-                }
-            }
-            else
-            {
-                AddSemanticError(line, col,
-                    $"No se puede aplicar '-' entre {left.Type} y {right.Type}.");
-                return new Value(ValueType.Int, 0);
-            }
-        }
-    }
-
-    private Value EvaluateMulDivMod(Value left, Value right, string op, int line, int col)
-    {
-        if (IsNumeric(left) == 0 || IsNumeric(right) == 0)
-        {
-            AddSemanticError(line, col,
-                $"No se puede aplicar '{op}' entre {left.Type} y {right.Type}.");
-            return new Value(ValueType.Int, 0);
-        }
-
-        double l = ToDouble(left);
-        double r = ToDouble(right);
-
-        if ((op == "/" || op == "%") && r == 0)
-        {
-            AddSemanticError(line, col, "División entre cero no permitida.");
-            return new Value(ValueType.Int, 0);
-        }
-
-        switch (op)
-        {
-            case "*":
-            {
-                double product = l * r;
-                if (left.Type == ValueType.Int && right.Type == ValueType.Int)
-                {
-                    return new Value(ValueType.Int, (int)product);
-                }
-                else
-                {
-                    return new Value(ValueType.Float, product);
-                }
-            }
-            case "/":
-            {
-                double quotient = l / r;
-                return new Value(ValueType.Float, quotient);
-            }
-            case "%":
-            {
-                if (left.Type == ValueType.Int && right.Type == ValueType.Int)
-                {
-                    int mod = (int)l % (int)r;
-                    return new Value(ValueType.Int, mod);
-                }
-                else
-                {
-                    AddSemanticError(line, col,
-                        $"El operador '%' requiere int, se obtuvo {left.Type} y {right.Type}.");
-                    return new Value(ValueType.Int, 0);
-                }
-            }
-        }
-
-        return new Value(ValueType.Int, 0);
-    }
-public override Value VisitAssignacion([NotNull] AssignacionContext context)
-{
-    int line = context.Start.Line;
-    int column = context.Start.Column;
-    string targetIdentifier = context.IDENTIFIER().GetText();
-    Value rightValue = Visit(context.expresion());
-    
-    try
-    {
-        // Si tenemos una asignación a un campo de struct (contiene un punto)
-        if (targetIdentifier.Contains("."))
-        {
-            // Dividir en partes: "persona.direccion.calle" -> ["persona", "direccion", "calle"]
-            string[] parts = targetIdentifier.Split('.');
-            string structVarName = parts[0];
-            
-            // Obtener la instancia base del struct
-            Value structValue = currentEnv.GetVariable(structVarName);
-            if (structValue.Type != ValueType.Struct)
-            {
-                AddSemanticError(line, column, $"{structVarName} no es un struct");
-                return Value.FromNil();
-            }
-            
-            StructInstance instance = structValue.AsStruct();
-            
-            // Navegar a través de los campos intermedios hasta llegar al penúltimo
-            for (int i = 1; i < parts.Length - 1; i++)
-            {
-                string fieldName = parts[i];
-                try
-                {
-                    Value fieldValue = instance.GetField(fieldName);
-                    if (fieldValue.Type != ValueType.Struct)
-                    {
-                        AddSemanticError(line, column, 
-                            $"El campo {fieldName} no es un struct y no permite acceso anidado");
-                        return Value.FromNil();
-                    }
-                    instance = fieldValue.AsStruct();
-                }
-                catch (Exception ex)
-                {
-                    AddSemanticError(line, column, ex.Message);
-                    return Value.FromNil();
-                }
-            }
-            
-            // Asignar al último campo
-            string finalFieldName = parts[parts.Length - 1];
-            try
-            {
-                instance.SetField(finalFieldName, rightValue);
-                return rightValue;
-            }
-            catch (Exception ex)
-            {
-                AddSemanticError(line, column, ex.Message);
-                return Value.FromNil();
-            }
-        }
-        else
-        {
-            // Asignación normal a una variable
-            Value currentValue = currentEnv.GetVariable(targetIdentifier);
-            // Se obtiene el operador de asignación (=, +=, o -=)
-            string op = context.GetChild(1).GetText();
-            Value newValue = null;
-            
-            switch (op)
-            {
-                case "=":
-                    currentEnv.SetVariable(targetIdentifier, rightValue);
-                    return rightValue;
-                case "+=":
-                    newValue = ApplyPlusAssign(currentValue, rightValue, line, column);
-                    break;
-                case "-=":
-                    newValue = ApplyMinusAssign(currentValue, rightValue, line, column);
-                    break;
-                default:
-                    AddSemanticError(line, column, $"Operador de asignación desconocido: {op}");
-                    return currentValue;
-            }
-            
-            currentEnv.SetVariable(targetIdentifier, newValue);
-            return newValue;
-        }
-    }
-    catch (Exception ex)
-    {
-        AddSemanticError(line, column, ex.Message);
-        return Value.FromNil();
-    }
-}
-    
+   
 private Value ApplyPlusAssign(Value currentValue, Value rightValue, int line, int column)
 {
-    // Caso de números: se requiere que ambos operandos sean del mismo tipo.
     if (IsNumeric(currentValue) != 0 && IsNumeric(rightValue) != 0)
     {
         if (currentValue.Type != rightValue.Type)
@@ -687,7 +728,6 @@ private Value ApplyPlusAssign(Value currentValue, Value rightValue, int line, in
         else
             return new Value(ValueType.Float, result);
     }
-    // Caso de concatenación de strings (la validación ya es de igualdad de tipo)
     else if (currentValue.Type == ValueType.String && rightValue.Type == ValueType.String)
     {
         return new Value(ValueType.String, currentValue.AsString() + rightValue.AsString());
