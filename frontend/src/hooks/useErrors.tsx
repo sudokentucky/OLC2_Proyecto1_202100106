@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 
 interface Error {
   type: string;
-  description: string;
-  file: number;
+  line: number;
   column: number;
+  description: string;
 }
 
 export const useErrors = () => {
