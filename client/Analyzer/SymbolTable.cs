@@ -54,7 +54,6 @@ public class SymbolTable
         
         functions.Add(function.Name, function);
         
-        // Agregar a la lista de entradas para reportes
         entries.Add(new SymbolTableEntry(
             id: function.Name,
             symbolType: "Function",
