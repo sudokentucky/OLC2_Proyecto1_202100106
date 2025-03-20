@@ -6,7 +6,6 @@ public class ErrorListener : IAntlrErrorListener<int>, IAntlrErrorListener<IToke
 {
     private List<ErrorReportEntry> errors = new List<ErrorReportEntry>();
 
-    // Este método se invoca cuando el lexer encuentra un símbolo léxico inválido
     public void SyntaxError(TextWriter output,
                             IRecognizer recognizer,
                             int offendingSymbol,
@@ -24,7 +23,6 @@ public class ErrorListener : IAntlrErrorListener<int>, IAntlrErrorListener<IToke
         });
     }
 
-    // Este método se invoca cuando el parser encuentra un error de sintaxis
     public void SyntaxError(TextWriter output,
                             IRecognizer recognizer,
                             IToken offendingSymbol,
@@ -42,14 +40,12 @@ public class ErrorListener : IAntlrErrorListener<int>, IAntlrErrorListener<IToke
         });
     }
 
-    // Permite obtener la lista de errores detectados
     public IReadOnlyList<ErrorReportEntry> GetErrors()
     {
         return errors.AsReadOnly();
     }
 }
 
-// Clase para describir la entrada de un error en el reporte
 public class ErrorReportEntry
 {
     // "léxico", "sintáctico" o "semántico"
@@ -58,9 +54,7 @@ public class ErrorReportEntry
     // Línea donde ocurrió el error
     public int Line { get; set; }
 
-    // Columna
     public int Column { get; set; }
 
-    // Mensaje o descripción del error
     public string Description { get; set; }
 }
