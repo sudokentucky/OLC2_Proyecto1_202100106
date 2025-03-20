@@ -44,6 +44,12 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitInstruction([NotNull] gramaticaParser.InstructionContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.conversionFunc"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitConversionFunc([NotNull] gramaticaParser.ConversionFuncContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="gramaticaParser.funcDecl"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -289,4 +295,10 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitPrimary([NotNull] gramaticaParser.PrimaryContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.functCall"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFunctCall([NotNull] gramaticaParser.FunctCallContext context);
 }

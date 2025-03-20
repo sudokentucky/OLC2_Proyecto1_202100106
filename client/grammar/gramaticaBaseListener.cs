@@ -60,6 +60,18 @@ public partial class gramaticaBaseListener : IgramaticaListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitInstruction([NotNull] gramaticaParser.InstructionContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.conversionFunc"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterConversionFunc([NotNull] gramaticaParser.ConversionFuncContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.conversionFunc"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitConversionFunc([NotNull] gramaticaParser.ConversionFuncContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.funcDecl"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -551,6 +563,18 @@ public partial class gramaticaBaseListener : IgramaticaListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitPrimary([NotNull] gramaticaParser.PrimaryContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.functCall"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterFunctCall([NotNull] gramaticaParser.FunctCallContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.functCall"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitFunctCall([NotNull] gramaticaParser.FunctCallContext context) { }
 
 	/// <inheritdoc/>
 	/// <remarks>The default implementation does nothing.</remarks>

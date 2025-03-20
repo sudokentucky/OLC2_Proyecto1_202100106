@@ -51,6 +51,16 @@ public interface IgramaticaListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitInstruction([NotNull] gramaticaParser.InstructionContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.conversionFunc"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterConversionFunc([NotNull] gramaticaParser.ConversionFuncContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.conversionFunc"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitConversionFunc([NotNull] gramaticaParser.ConversionFuncContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.funcDecl"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -460,4 +470,14 @@ public interface IgramaticaListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitPrimary([NotNull] gramaticaParser.PrimaryContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.functCall"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterFunctCall([NotNull] gramaticaParser.FunctCallContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.functCall"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitFunctCall([NotNull] gramaticaParser.FunctCallContext context);
 }
