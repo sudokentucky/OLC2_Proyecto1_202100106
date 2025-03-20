@@ -40,7 +40,7 @@ const SymbolTable: React.FC = () => {
                   className="hover:bg-dracula-700 hover:text-light transition-all duration-300 ease-in-out"
                 >
                   <td className="border border-nosferatu px-4 py-2 text-center">{symbol.id}</td>
-                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.symbolType}</td>
+                  <td className="border border-nosferatu px-4 py-2 text-center">{symbol.type}</td>
                   <td className="border border-nosferatu px-4 py-2 text-center">{symbol.dataType}</td>
                   <td className="border border-nosferatu px-4 py-2 text-center">{symbol.value}</td>
                   <td className="border border-nosferatu px-4 py-2 text-center">{symbol.scope}</td>
