@@ -74,7 +74,6 @@ public class Value
         };
     }
 
-// Modificar ValidateType en la clase Value
 private bool ValidateType(ValueType type, object data)
 {
     return type switch
