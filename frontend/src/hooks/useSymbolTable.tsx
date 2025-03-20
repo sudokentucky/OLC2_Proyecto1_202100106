@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 // Actualizamos la interfaz para que coincida con la respuesta del backend
 interface Symbol {
     id: string;
-    symbolType: string;
+    type: string;
     dataType: string;
     scope: string;
     value: string; 
