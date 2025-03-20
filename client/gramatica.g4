@@ -20,6 +20,11 @@ JOIN                    : 'join';
 INDEX                   : 'Index';
 STRUCT                  : 'struct';
 FUNC                    : 'func';
+STRCONV                 : 'strconv';
+ATOI                    : 'Atoi';
+PARSERFLOAT             : 'ParseFloat';
+REFLECT                 : 'reflect';
+TYPEOF                  : 'TypeOf';
 
 INT_TYPE                 : 'int';
 FLOAT64_TYPE             : 'float64';
@@ -39,6 +44,7 @@ COMA                     : ',';
 DOS_PUNTOS               : ':';
 
 ASIGNACION               : '=';
+ASIGNACION_DECLARACION   : ':=';
 ASIGNACIO_INCREMENTO     : '+=';
 ASIGNACIO_DECREMENTO     : '-=';
 INCREMENTO               : '++';
@@ -90,6 +96,11 @@ instruction
     | breakStmt
     ;
 
+conversionFunc
+    :STRCONV PUNTO ATOI PARENTESIS_IZQ expresion PARENTESIS_DER
+    |STRCONV PUNTO PARSERFLOAT PARENTESIS_IZQ expresion PARENTESIS_DER
+    |REFLECT PUNTO TYPEOF PARENTESIS_IZQ expresion PARENTESIS_DER
+    ;
 funcDecl
     : FUNC IDENTIFIER PARENTESIS_IZQ paramsList? PARENTESIS_DER typeSpec? bloque
     ;
@@ -103,11 +114,11 @@ param
     ;
 
 structDecl
-    : STRUCT IDENTIFIER LLAVE_IZQ (fieldDecl)+ LLAVE_DER PUNTO_Y_COMA?  // Al menos un campo
+    : STRUCT IDENTIFIER LLAVE_IZQ (fieldDecl)+ LLAVE_DER PUNTO_Y_COMA?  
     ;
 
 fieldDecl
-    : typeSpec IDENTIFIER PUNTO_Y_COMA  // Definición de campo: <tipo> <nombre>;
+    : typeSpec IDENTIFIER PUNTO_Y_COMA  
     ;
 
 structLiteral
@@ -188,12 +199,12 @@ elseStmt
 
 declaracion
     : VAR IDENTIFIER typeSpec? (ASIGNACION expresion)? PUNTO_Y_COMA?
-    | IDENTIFIER IDENTIFIER ASIGNACION structLiteral PUNTO_Y_COMA? // Para: Persona p = {...}
-    | VAR IDENTIFIER ASIGNACION FUNC PARENTESIS_IZQ paramsList? PARENTESIS_DER typeSpec? bloque PUNTO_Y_COMA? // Para: var nombre = func() {...}
+    | IDENTIFIER IDENTIFIER ASIGNACION structLiteral PUNTO_Y_COMA? 
+    | VAR IDENTIFIER ASIGNACION FUNC PARENTESIS_IZQ paramsList? PARENTESIS_DER typeSpec? bloque PUNTO_Y_COMA? 
     ;
     
 assignacion
-    : IDENTIFIER (ASIGNACION | ASIGNACIO_INCREMENTO | ASIGNACIO_DECREMENTO) expresion PUNTO_Y_COMA?
+    : IDENTIFIER (ASIGNACION | ASIGNACIO_INCREMENTO | ASIGNACION_DECLARACION |ASIGNACIO_DECREMENTO) expresion PUNTO_Y_COMA?
     ;
 
 exprStmt
@@ -239,6 +250,7 @@ unaryExpr
     | NOT unaryExpr
     | primary 
     | sliceFunc
+    | conversionFunc
     ;
 
 sliceFunc
@@ -263,19 +275,24 @@ typeSpec
     ;
 
 sliceLiteral
-    : CORCHETE_IZQ CORCHETE_DER typeSpec  // typeSpec es obligatorio
-      LLAVE_IZQ (expresion (COMA expresion)*)? LLAVE_DER
+    : sliceType LLAVE_IZQ (expresion (COMA expresion)*)? LLAVE_DER
     ;
 
 
-primary: IDENTIFIER (CORCHETE_IZQ expresion CORCHETE_DER)* (PUNTO IDENTIFIER)*
-       | IDENTIFIER PARENTESIS_IZQ argumentList? PARENTESIS_DER  // Llamada a función
-       | RUNE_LIT
-       | INT_LIT
-       | FLOAT_LIT
-       | STRING_LIT
-       | PARENTESIS_IZQ expresion PARENTESIS_DER
-       | sliceLiteral
-       | structLiteral
-       ;
+primary
+    : functCall
+    | IDENTIFIER (CORCHETE_IZQ expresion CORCHETE_DER)* (PUNTO IDENTIFIER)*  
+    | INT_LIT
+    | FLOAT_LIT
+    | STRING_LIT
+    | RUNE_LIT
+    | PARENTESIS_IZQ expresion PARENTESIS_DER  
+    | sliceLiteral
+    | structLiteral
+    ;
+
+functCall
+    : IDENTIFIER PARENTESIS_IZQ argumentList? PARENTESIS_DER
+    ;
+
 
