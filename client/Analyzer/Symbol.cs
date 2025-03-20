@@ -33,7 +33,6 @@ public class Value
     public Slice AsSlice() => (Slice)Data;
     public StructInstance AsStruct() => (StructInstance)Data;
 
-    // Creadores estáticos
     public static Value FromInt(int i)       => new Value(ValueType.Int, i);
     public static Value FromFloat(double d)  => new Value(ValueType.Float, d);
     public static Value FromString(string s) => new Value(ValueType.String, s);
@@ -43,7 +42,6 @@ public class Value
     public static Value FromStruct(StructInstance s) => new Value(ValueType.Struct, s);
     public static Value FromNil()            => new Value(ValueType.Nil, null);
 
-    // Valor por defecto según tipo
     public static Value DefaultForType(ValueType t)
     {
         return t switch
@@ -54,11 +52,12 @@ public class Value
             ValueType.Bool   => FromBool(false),
             ValueType.Rune   => FromRune('\0'),
             ValueType.Slice  => FromSlice(new Slice(ValueType.Nil)),
-            ValueType.Struct => FromNil(), // ⚠️ Hasta que instancies con StructType.CreateInstance
+            ValueType.Struct => FromNil(), 
             ValueType.Nil    => FromNil(),
             _                => FromNil()
         };
     }
+
     public override string ToString()
     {
         return Type switch
@@ -75,20 +74,21 @@ public class Value
         };
     }
 
-    private bool ValidateType(ValueType type, object data)
+// Modificar ValidateType en la clase Value
+private bool ValidateType(ValueType type, object data)
+{
+    return type switch
     {
-        return type switch
-        {
-            ValueType.Int    => data is int,
-            ValueType.Float  => data is double,
-            ValueType.String => data is string,
-            ValueType.Bool   => data is bool,
-            ValueType.Rune   => data is char,
-            ValueType.Slice  => data is Slice,
-            ValueType.Nil    => data == null,
-            _                => false
-        };
-    }
+        ValueType.Int    => data is int,
+        ValueType.Float  => data is double,
+        ValueType.String => data is string,
+        ValueType.Bool   => data is bool,
+        ValueType.Rune   => data is char,
+        ValueType.Slice  => data is Slice,
+        ValueType.Struct => data is StructInstance,  
+        ValueType.Nil    => data == null,
+        _                => false
+    };
 }
 
 public class Symbol
@@ -111,4 +111,5 @@ public class Symbol
         RuntimeValue = initialValue;
     }
 
+}
 }
