@@ -9,17 +9,13 @@ public override Value VisitSliceType(gramaticaParser.SliceTypeContext context)
 
     if (subTypeVal.Type == ValueType.Slice)
     {
-        // Obtener el tipo base del slice interno (ej: int en [][]int)
         Slice innerSlice = (Slice)subTypeVal.Data;
         ValueType nestedType = innerSlice.NestedValueType;
-
-        // Crear slice multidimensional con el tipo base heredado
         Slice topSlice = new Slice(ValueType.Slice, nestedType);
         return new Value(ValueType.Slice, topSlice);
     }
     else
     {
-        // Slice 1D (ej: []int)
         Slice topSlice = new Slice(subTypeVal.Type);
         return new Value(ValueType.Slice, topSlice);
     }
@@ -30,14 +26,13 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
     int line = context.Start.Line;
     int col = context.Start.Column;
 
-    // Obtener el tipo declarado (ej: [][]int)
     Slice declaredSliceType = null;
     ValueType declaredElementType = ValueType.Nil;
     ValueType declaredNestedType = ValueType.Nil;
 
-    if (context.typeSpec() != null)
+    if (context.sliceType() != null)
     {
-        Value typeValue = Visit(context.typeSpec());
+        Value typeValue = Visit(context.sliceType());
         if (typeValue.Type == ValueType.Slice)
         {
             declaredSliceType = typeValue.AsSlice();
@@ -50,7 +45,6 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
         }
     }
 
-    // Recolectar elementos del literal
     var exprList = context.expresion();
     List<Value> elements = new List<Value>();
     foreach (var exprNode in exprList)
@@ -59,12 +53,10 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
         elements.Add(elemValue);
     }
 
-    // Determinar si es multidimensional y los tipos esperados
     bool isMultiDimensional = declaredElementType == ValueType.Slice;
     ValueType expectedElementType = declaredElementType;
     ValueType expectedNestedType = declaredNestedType;
 
-    // Inferir tipo si no está declarado
     if (declaredElementType == ValueType.Nil && elements.Count > 0)
     {
         if (elements[0].Type == ValueType.Slice)
@@ -80,7 +72,6 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
         }
     }
 
-    // Validar tipos de elementos
     foreach (var elem in elements)
     {
         if (isMultiDimensional)
@@ -110,13 +101,11 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
         }
     }
 
-    // Construir el slice
     Slice newSlice;
     try
     {
         if (isMultiDimensional)
         {
-            // Crear slice multidimensional con tipo base (ej: int)
             newSlice = new Slice(ValueType.Slice, expectedNestedType);
             foreach (var elem in elements)
             {
@@ -128,7 +117,6 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
         }
         else
         {
-            // Slice 1D
             newSlice = new Slice(expectedElementType, elements);
         }
     }
@@ -165,14 +153,12 @@ private string DescribeSlice(ValueType elementType, ValueType nestedType)
     }
     else if (context.SLICES() != null && context.INDEX() != null)
     {
-        // 3) slices.Index(expr, expr)
         Value sliceVal = Visit(context.expresion(0));
         Value searchVal = Visit(context.expresion(1));
         return EvaluateSlicesIndex(sliceVal, searchVal, line, column);
     }
     else if (context.STRINGS() != null && context.JOIN() != null)
     {
-        // 4) strings.join(expr, expr)
         Value sliceVal  = Visit(context.expresion(0));
         Value sepVal    = Visit(context.expresion(1));
         return EvaluateStringsJoin(sliceVal, sepVal, line, column);
