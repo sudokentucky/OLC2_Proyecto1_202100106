@@ -12,7 +12,6 @@ public override Value VisitAssignacion([NotNull] AssignacionContext context)
 
     string targetIdentifier = context.IDENTIFIER(0).GetText();
 
-    // ✅ Ahora se captura correctamente el operador
     string assignmentOperator;
 
     if (context.ASIGNACION() != null)
@@ -36,14 +35,12 @@ public override Value VisitAssignacion([NotNull] AssignacionContext context)
     int exprCount = context.expresion().Length;
     Value rightValue = Visit(context.expresion(exprCount - 1));
 
-    // Índices del slice (opcional)
     var indices = new List<Value>();
     for (int i = 0; i < context.CORCHETE_IZQ().Length; i++)
     {
         indices.Add(Visit(context.expresion(i)));
     }
 
-    // Cadena de campos (opcional)
     var fieldChain = new List<string>();
     int idCount = context.IDENTIFIER().Length;
     for (int i = 1; i < idCount; i++)
@@ -67,19 +64,16 @@ private Value HandleAssignment(
     {
         Value current = currentEnv.GetVariable(identifier);
 
-        // Caso: acceso a slices con índices
         if (indices.Count > 0)
         {
             return HandleSliceIndexAssignment(current, indices, fieldChain, rightValue, op, line, column);
         }
 
-        // Caso: acceso a campos (struct)
         if (fieldChain.Count > 0)
         {
             return HandleStructFieldAssignment(current.AsStruct(), fieldChain, rightValue, line, column);
         }
 
-        // Asignación simple a variable
         Value result = ApplyAssignmentOperator(current, rightValue, op, line, column);
         currentEnv.SetVariable(identifier, result);
         return result;
@@ -99,7 +93,6 @@ private Value HandleSliceIndexAssignment(
     int line,
     int column)
 {
-    // Navegamos el slice
     Slice currentSlice = currentValue.AsSlice();
 
     for (int i = 0; i < indices.Count - 1; i++)
@@ -120,7 +113,7 @@ private Value HandleSliceIndexAssignment(
 
     if (fieldChain.Count > 0)
     {
-        // Accedemos al struct dentro del slice
+        // accedo al struct dentro del slice
         Value targetElement = SliceOperations.GetElement(currentSlice, lastIndex);
 
         if (targetElement.Type != ValueType.Struct)
@@ -132,7 +125,6 @@ private Value HandleSliceIndexAssignment(
         return HandleStructFieldAssignment(targetElement.AsStruct(), fieldChain, rightValue, line, column);
     }
 
-    // Asignación directa al elemento del slice
     Value oldValue = SliceOperations.GetElement(currentSlice, lastIndex);
     Value result = ApplyAssignmentOperator(oldValue, rightValue, op, line, column);
     SliceOperations.SetElement(currentSlice, lastIndex, result);
@@ -179,105 +171,6 @@ private Value HandleStructFieldAssignment(StructInstance structInstance, List<st
     }
 }
 
-
-
-    private bool IsStructFieldAssignment(string identifier)
-    {
-        return identifier.Contains(".");
-    }
-
-    private Value HandleStructFieldAssignment(string identifier, Value rightValue, int line, int column)
-    {
-        string[] fieldPath = identifier.Split('.');
-        string structVariableName = fieldPath[0];
-
-        Value structValue = currentEnv.GetVariable(structVariableName);
-        if (structValue.Type != ValueType.Struct)
-        {
-            AddSemanticError(line, column, $"{structVariableName} no es un struct");
-            return Value.FromNil();
-        }
-
-        StructInstance structInstance = structValue.AsStruct();
-
-        for (int i = 1; i < fieldPath.Length - 1; i++)
-        {
-            string fieldName = fieldPath[i];
-            if (!TryGetNestedStructField(structInstance!, fieldName, out structInstance!, line, column))
-            {
-                return Value.FromNil();
-            }
-        }
-
-        string finalFieldName = fieldPath[^1];
-        if (!TrySetStructField(structInstance, finalFieldName, rightValue, line, column))
-        {
-            return Value.FromNil();
-        }
-
-        return rightValue;
-    }
-
-    private bool TryGetNestedStructField(StructInstance instance, string fieldName, out StructInstance? nestedInstance, int line, int column)
-    {
-        nestedInstance = null;
-
-        try
-        {
-            Value fieldValue = instance.GetField(fieldName);
-            if (fieldValue.Type != ValueType.Struct)
-            {
-                AddSemanticError(line, column, $"El campo {fieldName} no es un struct y no permite acceso anidado");
-                return false;
-            }
-
-            nestedInstance = fieldValue.AsStruct();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            AddSemanticError(line, column, ex.Message);
-            return false;
-        }
-    }
-
-    private bool TrySetStructField(StructInstance instance, string fieldName, Value value, int line, int column)
-    {
-        try
-        {
-            instance.SetField(fieldName, value);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            AddSemanticError(line, column, ex.Message);
-            return false;
-        }
-    }
-
-    private Value HandleVariableAssignment(string identifier, Value rightValue, string op, int line, int column)
-    {
-        try
-        {
-            Value currentValue = currentEnv.GetVariable(identifier);
-
-            Value result = op switch
-            {
-                "=" => rightValue,
-                "+=" => ApplyPlusAssign(currentValue, rightValue, line, column),
-                "-=" => ApplyMinusAssign(currentValue, rightValue, line, column),
-                _ => HandleUnknownOperator(op, currentValue, line, column)
-            };
-
-            currentEnv.SetVariable(identifier, result);
-            return result;
-        }
-        catch (Exception)
-        {
-            AddSemanticError(line, column, $"Variable '{identifier}' no existe.");
-            return Value.FromNil();
-        }
-    }
 
     private Value HandleUnknownOperator(string op, Value currentValue, int line, int column)
     {
