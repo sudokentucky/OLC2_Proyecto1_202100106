@@ -1,0 +1,70 @@
+// Factorial clásico: n!
+func factorial(n int) int {
+    if n == 0 {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+// Fibonacci clásico (sin memo)
+func fibonacci(n int) int {
+    if n == 0 {
+        return 0;
+    } else if n == 1 {
+        return 1;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+// Suma recursiva de 1 hasta n
+func sumaRango(n int) int {
+    if n == 0 {
+        return 0;
+    }
+    return n + sumaRango(n - 1);
+}
+
+// Torres de Hanoi (solo imprime movimientos)
+func hanoi(n int, origen string, auxiliar string, destino string) {
+    if n == 1 {
+        fmt.Println("Mover disco 1 de", origen, "a", destino);
+        return;
+    }
+
+    hanoi(n - 1, origen, destino, auxiliar);
+    fmt.Println("Mover disco", n, "de", origen, "a", destino);
+    hanoi(n - 1, auxiliar, origen, destino);
+}
+
+// Caminos en una cuadrícula m x n
+func caminos(m int, n int) int {
+    if m == 1 || n == 1 {
+        return 1;
+    }
+    return caminos(m - 1, n) + caminos(m, n - 1);
+}
+
+func main() {
+    fmt.Println("== Factorial ==");
+    var n int = 5;
+    var fact int = factorial(n);
+    fmt.Println("Factorial de", n, "es:", fact);
+
+    fmt.Println("\n== Fibonacci ==");
+    var fib int = fibonacci(n);
+    fmt.Println("Fibonacci de", n, "es:", fib);
+
+    fmt.Println("\n== Suma de Rango ==");
+    var suma int = sumaRango(n);
+    fmt.Println("Suma de 1 a", n, "es:", suma);
+
+    fmt.Println("\n== Torres de Hanoi (3 discos) ==");
+    hanoi(3, "A", "B", "C");
+
+    fmt.Println("\n== Caminos en Cuadrícula ==");
+    var filas int = 5;
+    var columnas int = 5;
+    var caminosRes int = caminos(filas, columnas);
+    fmt.Println("Número de caminos en una cuadrícula de", filas, "x", columnas, "es:", caminosRes);
+}
+main();
