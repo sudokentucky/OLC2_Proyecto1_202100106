@@ -62,12 +62,11 @@ const Navbar: React.FC<NavbarProps> = ({ onExecuteCommand, onResetCommand, onLoa
     }
   };
 
-  // Función para guardar el archivo .ci
   const handleSaveFile = () => {
     const blob = new Blob([inputText], { type: "text/plain;charset=utf-8" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "archivo.ci";
+    link.download = "archivo.glt(golight";
     link.click();
   };
 
@@ -96,7 +95,7 @@ const Navbar: React.FC<NavbarProps> = ({ onExecuteCommand, onResetCommand, onLoa
             <li>
               <label className="block w-full text-left px-4 py-2 hover:bg-dracula hover:text-cullen-200 rounded-md cursor-pointer transition-colors duration-300">
                 Abrir archivo
-                <input type="file" accept=".ci" onChange={handleOpenFile} className="hidden" />
+                <input type="file" accept=".glt" onChange={handleOpenFile} className="hidden" />
               </label>
             </li>
             <li>
