@@ -48,10 +48,8 @@ public class ErrorListener : IAntlrErrorListener<int>, IAntlrErrorListener<IToke
 
 public class ErrorReportEntry
 {
-    // "léxico", "sintáctico" o "semántico"
     public string Type { get; set; }
 
-    // Línea donde ocurrió el error
     public int Line { get; set; }
 
     public int Column { get; set; }
