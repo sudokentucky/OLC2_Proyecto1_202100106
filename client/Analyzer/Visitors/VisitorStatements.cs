@@ -12,347 +12,240 @@ public partial class Visitor
         return Visit(context.expresion());
     }
 
-     private Value[] VisitArgumentList(ArgumentListContext ctx)
+    private Value[] VisitArgumentList(ArgumentListContext ctx)
     {
         var exprs = ctx.expresion();
         Value[] results = new Value[exprs.Length];
+
         for (int i = 0; i < exprs.Length; i++)
         {
             results[i] = Visit(exprs[i]);
+            if (results[i] == null)
+            {
+                AddSemanticError(ctx.Start.Line, ctx.Start.Column,
+                    $"El argumento {i + 1} es nulo.");
+                results[i] = new Value(ValueType.Nil, null); // o manejar el caso
+            }
         }
         return results;
     }
 
     public override Value VisitBloque([NotNull] BloqueContext context)
-{
-    Environment previousEnv = currentEnv;
-    currentEnv = new Environment(table, previousEnv);
-    
-    Value lastResult = null;
-    
-    foreach (var instruction in context.instruction())
     {
-        lastResult = Visit(instruction);
-    }
-    
-    currentEnv = previousEnv;
-    
-    return lastResult;
-}
+        Environment previousEnv = currentEnv;
+        currentEnv = new Environment(table, previousEnv);
 
-public override Value VisitIfStmt([NotNull] IfStmtContext context)
-{
-    int line = context.Start.Line;
-    int col = context.Start.Column;
-    
-    Value condition = Visit(context.expresion());
-    
-    if (condition.Type != ValueType.Bool)
-    {
-        AddSemanticError(line, col, 
-            $"La condición del 'if' debe ser booleana, se obtuvo {condition.Type}.");
-        return null;
+        Value lastResult = null;
+
+        foreach (var instruction in context.instruction())
+        {
+            lastResult = Visit(instruction);
+        }
+
+        currentEnv = previousEnv;
+
+        return lastResult;
     }
+
+    public override Value VisitIfStmt([NotNull] IfStmtContext context)
+    {
+        int line = context.Start.Line;
+        int col = context.Start.Column;
+
+        Value condition = Visit(context.expresion());
+
+        if (condition.Type != ValueType.Bool)
+        {
+            AddSemanticError(line, col,
+                $"La condición del 'if' debe ser booleana, se obtuvo {condition.Type}.");
+            return null;
+        }
         if (condition.AsBool())
-    {
-        Visit(context.bloque());
+        {
+            Visit(context.bloque());
+            return null;
+        }
+        var elseIfStatements = context.elseIfStmt();
+        if (elseIfStatements != null)
+        {
+            foreach (var elseIfStmt in elseIfStatements)
+            {
+                int elseIfLine = elseIfStmt.Start.Line;
+                int elseIfCol = elseIfStmt.Start.Column;
+
+                Value elseIfCondition = Visit(elseIfStmt.expresion());
+
+                if (elseIfCondition.Type != ValueType.Bool)
+                {
+                    AddSemanticError(elseIfLine, elseIfCol,
+                        $"La condición del 'else if' debe ser booleana, se obtuvo {elseIfCondition.Type}.");
+                    continue;
+                }
+
+                if (elseIfCondition.AsBool())
+                {
+                    Visit(elseIfStmt.bloque());
+                    return null;
+                }
+            }
+        }
+        if (context.elseStmt() != null)
+        {
+            Visit(context.elseStmt().bloque());
+        }
+
         return null;
     }
-        var elseIfStatements = context.elseIfStmt();
-    if (elseIfStatements != null)
-    {
-        foreach (var elseIfStmt in elseIfStatements)
-        {
-            int elseIfLine = elseIfStmt.Start.Line;
-            int elseIfCol = elseIfStmt.Start.Column;
-            
-            Value elseIfCondition = Visit(elseIfStmt.expresion());
-            
-            if (elseIfCondition.Type != ValueType.Bool)
-            {
-                AddSemanticError(elseIfLine, elseIfCol,
-                    $"La condición del 'else if' debe ser booleana, se obtuvo {elseIfCondition.Type}.");
-                continue;
-            }
-            
-            if (elseIfCondition.AsBool())
-            {
-                Visit(elseIfStmt.bloque());
-                return null;
-            }
-        }
-    }
-    if (context.elseStmt() != null)
-    {
-        Visit(context.elseStmt().bloque());
-    }
-    
-    return null;
-}
 
-public override Value VisitSwitchStmt([NotNull] SwitchStmtContext context)
-{
-    int line = context.Start.Line;
-    int column = context.Start.Column;
-    
-    Value switchValue = Visit(context.expresion());
-    
-    bool caseMatched = false;
-    bool executeNext = false; 
-    
-    switchDepth++; 
-    
-    try
+    public override Value VisitSwitchStmt([NotNull] SwitchStmtContext context)
     {
-        foreach (var caseStmt in context.caseStmt())
+        int line = context.Start.Line;
+        int column = context.Start.Column;
+
+        Value switchValue = Visit(context.expresion());
+
+        bool caseMatched = false;
+        bool executeNext = false;
+
+        switchDepth++;
+
+        try
         {
-            Value caseValue = Visit(caseStmt.expresion());
-            
-            bool areEqual = executeNext || CompareValuesForEquality(switchValue, caseValue, line, column);
-            
-            if (areEqual)
+            foreach (var caseStmt in context.caseStmt())
             {
-                caseMatched = true;
-                
-                // Si este case tiene instrucciones
-                if (caseStmt.instruction().Length > 0)
+                Value caseValue = Visit(caseStmt.expresion());
+
+                bool areEqual = executeNext || CompareValuesForEquality(switchValue, caseValue, line, column);
+
+                if (areEqual)
                 {
-                    executeNext = false;  
-                    
-                    try
+                    caseMatched = true;
+
+                    // Si este case tiene instrucciones
+                    if (caseStmt.instruction().Length > 0)
                     {
-                        foreach (var instruction in caseStmt.instruction())
+                        executeNext = false;
+
+                        try
                         {
-                            Visit(instruction);
+                            foreach (var instruction in caseStmt.instruction())
+                            {
+                                Visit(instruction);
+                            }
                         }
+                        catch (BreakException)
+                        {
+                            return null;
+                        }
+
+                        break;
                     }
-                    catch (BreakException)
+                    else
                     {
-                        return null;
+                        executeNext = true;
                     }
-                    
-                    break;
                 }
-                else
+            }
+
+            if (!caseMatched && context.defaultStmt() != null)
+            {
+                try
                 {
-                    executeNext = true;
+                    foreach (var instruction in context.defaultStmt().instruction())
+                    {
+                        Visit(instruction);
+                    }
                 }
-            }
-        }
-        
-        if (!caseMatched && context.defaultStmt() != null)
-        {
-            try
-            {
-                foreach (var instruction in context.defaultStmt().instruction())
+                catch (BreakException)
                 {
-                    Visit(instruction);
+                    return null;
                 }
             }
-            catch (BreakException)
-            {
-                return null;
-            }
         }
-    }
-    finally
-    {
-        switchDepth--; 
-    }
-    
-    return null;
-}
-
-private bool CompareValuesForEquality(Value left, Value right, int line, int column)
-{
-    if (IsNumeric(left) != 0 && IsNumeric(right) != 0)
-    {
-        return ToDouble(left) == ToDouble(right);
-    }
-    else if (left.Type == ValueType.Bool && right.Type == ValueType.Bool)
-    {
-        return left.AsBool() == right.AsBool();
-    }
-    else if (left.Type == ValueType.String && right.Type == ValueType.String)
-    {
-        return left.AsString() == right.AsString();
-    }
-    else if (left.Type == ValueType.Rune && right.Type == ValueType.Rune)
-    {
-        return left.AsRune() == right.AsRune();
-    }
-    else
-    {
-        AddSemanticError(line, column,
-            $"No se pueden comparar valores de tipo {left.Type} y {right.Type} en un switch-case.");
-        return false;
-    }
-}
-
-public override Value VisitForStmt([NotNull] ForStmtContext context)
-{
-    if (context.forWhileStmt() != null)
-    {
-        return Visit(context.forWhileStmt());
-    }
-    else 
-    {
-        return Visit(context.forThreePartStmt());
-    }
-}
-
-public override Value VisitForWhileStmt([NotNull] ForWhileStmtContext context)
-{
-    int line = context.Start.Line;
-    int column = context.Start.Column;
-
-    loopDepth++; 
-    
-    try
-    {
-        while (true)
+        finally
         {
-            Value condition = Visit(context.expresion());
-            
-            if (condition.Type != ValueType.Bool)
-            {
-                AddSemanticError(line, column,
-                    $"La condición del bucle for debe ser booleana, se obtuvo {condition.Type}.");
-                break;
-            }
-            
-            if (!condition.AsBool())
-                break;
-                
-            try
-            {
-                Visit(context.bloque());
-            }
-            catch (ContinueException)
-            {
-                continue;
-            }
+            switchDepth--;
         }
-    }
-    catch (BreakException)
-    {
-    }
-    finally
-    {
-        loopDepth--; 
-    }
-    
-    return null;
-}
 
-public override Value VisitForThreePartStmt([NotNull] ForThreePartStmtContext context)
-{
-    int line = context.Start.Line;
-    int column = context.Start.Column;
-    Environment previousEnv = currentEnv;
-    currentEnv = new Environment(table, previousEnv);
-    
-    loopDepth++; 
-    
-    try
-    {
-        if (context.forInit() != null)
-        {
-            Visit(context.forInit());
-        }
-        
-        while (true)
-        {
-            if (context.expresion() != null)
-            {
-                Value condition = Visit(context.expresion());
-                
-                if (condition.Type != ValueType.Bool)
-                {
-                    AddSemanticError(line, column,
-                        $"La condición del bucle for debe ser booleana, se obtuvo {condition.Type}.");
-                    break;
-                }
-                
-                if (!condition.AsBool())
-                    break;
-            }
-            
-            try
-            {
-                Visit(context.bloque());
-            }
-            catch (ContinueException)
-            {
-            }
-            
-            if (context.forPost() != null)
-            {
-                Visit(context.forPost());
-            }
-        }
+        return null;
     }
-    catch (BreakException)
-    {
-    }
-    finally
-    {
-        loopDepth--; 
-        currentEnv = previousEnv; 
-    }
-    
-    return null;
-}
 
-public override Value VisitIncDecStmt([NotNull] IncDecStmtContext context)
-{
-    int line = context.Start.Line;
-    int column = context.Start.Column;
-    string varName = context.IDENTIFIER().GetText();
-
-    try
+    private bool CompareValuesForEquality(Value left, Value right, int line, int column)
     {
-        Value currentValue = currentEnv.GetVariable(varName);
-        
-        if (currentValue.Type != ValueType.Int && currentValue.Type != ValueType.Float)
+        if (IsNumeric(left) != 0 && IsNumeric(right) != 0)
         {
-            AddSemanticError(line, column, 
-                $"El operador de incremento/decremento solo es aplicable a tipos numéricos, se obtuvo {currentValue.Type}.");
-            return currentValue;
+            return ToDouble(left) == ToDouble(right);
         }
-        
-        string op = context.GetChild(1).GetText();
-        Value newValue = null;
-        
-        if (op == "++")
+        else if (left.Type == ValueType.Bool && right.Type == ValueType.Bool)
         {
-            double updated = ToDouble(currentValue) + 1;
-            newValue = currentValue.Type == ValueType.Int
-                ? new Value(ValueType.Int, (int)updated)
-                : new Value(ValueType.Float, updated);
+            return left.AsBool() == right.AsBool();
         }
-        else if (op == "--")
+        else if (left.Type == ValueType.String && right.Type == ValueType.String)
         {
-            double updated = ToDouble(currentValue) - 1;
-            newValue = currentValue.Type == ValueType.Int
-                ? new Value(ValueType.Int, (int)updated)
-                : new Value(ValueType.Float, updated);
+            return left.AsString() == right.AsString();
+        }
+        else if (left.Type == ValueType.Rune && right.Type == ValueType.Rune)
+        {
+            return left.AsRune() == right.AsRune();
         }
         else
         {
-            AddSemanticError(line, column, $"Operador desconocido: {op}");
-            return currentValue;
+            AddSemanticError(line, column,
+                $"No se pueden comparar valores de tipo {left.Type} y {right.Type} en un switch-case.");
+            return false;
         }
-        
-        currentEnv.SetVariable(varName, newValue);
-        return newValue;
     }
-    catch (Exception ex)
-    {
-        AddSemanticError(line, column, ex.Message);
-        return new Value(ValueType.Int, 0);
-    }
-}
 
     
+    public override Value VisitIncDecStmt([NotNull] IncDecStmtContext context)
+    {
+        int line = context.Start.Line;
+        int column = context.Start.Column;
+        string varName = context.IDENTIFIER().GetText();
+
+        try
+        {
+            Value currentValue = currentEnv.GetVariable(varName);
+
+            if (currentValue.Type != ValueType.Int && currentValue.Type != ValueType.Float)
+            {
+                AddSemanticError(line, column,
+                    $"El operador de incremento/decremento solo es aplicable a tipos numéricos, se obtuvo {currentValue.Type}.");
+                return currentValue;
+            }
+
+            string op = context.GetChild(1).GetText();
+            Value newValue = null;
+
+            if (op == "++")
+            {
+                double updated = ToDouble(currentValue) + 1;
+                newValue = currentValue.Type == ValueType.Int
+                    ? new Value(ValueType.Int, (int)updated)
+                    : new Value(ValueType.Float, updated);
+            }
+            else if (op == "--")
+            {
+                double updated = ToDouble(currentValue) - 1;
+                newValue = currentValue.Type == ValueType.Int
+                    ? new Value(ValueType.Int, (int)updated)
+                    : new Value(ValueType.Float, updated);
+            }
+            else
+            {
+                AddSemanticError(line, column, $"Operador desconocido: {op}");
+                return currentValue;
+            }
+
+            currentEnv.SetVariable(varName, newValue);
+            return newValue;
+        }
+        catch (Exception ex)
+        {
+            AddSemanticError(line, column, ex.Message);
+            return new Value(ValueType.Int, 0);
+        }
+    }
+
+
 }
