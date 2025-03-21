@@ -24,8 +24,6 @@ public partial class Visitor
     {
         int line = context.Start.Line;
         int column = context.Start.Column;
-
-        // Crear un nuevo entorno para el ciclo for-range
         Environment previousEnv = currentEnv;
         currentEnv = new Environment(table, previousEnv);
 
@@ -33,28 +31,22 @@ public partial class Visitor
 
         try
         {
-            // Evaluar la expresión que representa la colección
             Value collection = Visit(context.expresion());
 
-            // Extraer nombres de las variables de iteración
             string indexVar = context.IDENTIFIER(0).GetText();
             string? valueVar = context.IDENTIFIER().Length > 1 ? context.IDENTIFIER(1).GetText() : null;
 
-            // Declarar la variable de índice siempre como int
             currentEnv.DeclareVariable(indexVar, Value.FromInt(0), line, column, "ForRange");
 
-            // Declarar la variable de valor si existe
             if (valueVar != null)
             {
                 if (collection.Type == ValueType.Slice)
                 {
                     Slice slice = collection.AsSlice();
-                    // Declarar la variable con el tipo de los elementos del slice
                     currentEnv.DeclareVariable(valueVar, Value.DefaultForType(slice.ElementType), line, column, "ForRange");
                 }
                 else if (collection.Type == ValueType.String)
                 {
-                    // Declarar la variable como Rune si es un string
                     currentEnv.DeclareVariable(valueVar, Value.DefaultForType(ValueType.Rune), line, column, "ForRange");
                 }
                 else
@@ -64,7 +56,6 @@ public partial class Visitor
                 }
             }
 
-            // Lógica de iteración si es un Slice
             if (collection.Type == ValueType.Slice)
             {
                 Slice slice = collection.AsSlice();
@@ -89,7 +80,6 @@ public partial class Visitor
                     }
                 }
             }
-            // Lógica de iteración si es un String
             else if (collection.Type == ValueType.String)
             {
                 string str = collection.AsString();
@@ -121,7 +111,6 @@ public partial class Visitor
         }
         catch (BreakException)
         {
-            // Break rompe el bucle sin error adicional
         }
         finally
         {
