@@ -257,6 +257,7 @@ public partial class Visitor
         }
     }
 
+    
     private bool HasCorrectArgumentCount(Function function, Value[] arguments, int line, int column)
     {
         if (arguments.Length == function.Parameters.Count)
