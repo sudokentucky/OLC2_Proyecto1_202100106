@@ -159,21 +159,18 @@ public override Value VisitTypeSpec([NotNull] gramaticaParser.TypeSpecContext co
 
     private Value EvaluateEquality(Value left, Value right, string op, int line, int col)
 {
-    // Si ambos son nil, siempre son iguales
     if (left.Type == ValueType.Nil && right.Type == ValueType.Nil)
     {
-        bool result = (op == "=="); // true para ==, false para !=
+        bool result = (op == "=="); 
         return Value.FromBool(result);
     }
     
-    // Si sólo uno es nil, nunca son iguales
     if (left.Type == ValueType.Nil || right.Type == ValueType.Nil)
     {
-        bool result = (op == "!="); // false para ==, true para !=
+        bool result = (op == "!=");
         return Value.FromBool(result);
     }
     
-    // El resto del método queda igual para otros tipos
     if (IsNumeric(left) != 0 && IsNumeric(right) != 0)
     {
         double l = ToDouble(left);
