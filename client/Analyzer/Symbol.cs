@@ -12,8 +12,8 @@ public enum ValueType
 
 public class Value
 {
-    public ValueType Type { get; private set; }
-    public object Data { get; private set; }
+    public ValueType Type { get; protected set; }
+    public object Data { get; protected set; }
 
     public Value(ValueType type, object data)
     {
@@ -24,6 +24,7 @@ public class Value
         Data = data;
     }
 
+    
     // Accesores tipados
     public int AsInt() => (int)Data;
     public double AsFloat() => (double)Data;
@@ -41,7 +42,12 @@ public class Value
     public static Value FromSlice(Slice s)   => new Value(ValueType.Slice, s);
     public static Value FromStruct(StructInstance s) => new Value(ValueType.Struct, s);
     public static Value FromNil()            => new Value(ValueType.Nil, null);
-
+// Nuevo constructor protegido que omite la validación.
+    protected Value(ValueType type)
+    {
+        Type = type;
+        Data = null;
+    }
     public static Value DefaultForType(ValueType t)
     {
         return t switch
