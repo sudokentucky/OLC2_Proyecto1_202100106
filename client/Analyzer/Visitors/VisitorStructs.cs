@@ -13,17 +13,12 @@ public partial class Visitor
         int line = context.Start.Line;
         int column = context.Start.Column;
 
-        // Detectar si hay campos
         if (context.fieldDecl().Length == 0)
         {
             AddSemanticError(line, column, $"El struct '{structName}' no puede estar vacío");
             return Value.FromNil();
         }
-
-        // Marcar este struct como "en definición"
         structsBeingDefined.Add(structName);
-
-        // Registrar struct en la tabla de símbolos
         currentStruct = new StructType(structName);
         try
         {
@@ -36,10 +31,7 @@ public partial class Visitor
             return Value.FromNil();
         }
 
-        // Agregar campos
         AddFieldsToStruct(context);
-
-        // Completar la definición
         structsBeingDefined.Remove(structName);
         currentStruct = null;
 
@@ -120,7 +112,6 @@ public partial class Visitor
                 }
                 catch
                 {
-                    // Ignorar, ya se maneja después si el structName es vacío
                 }
             }
         }
