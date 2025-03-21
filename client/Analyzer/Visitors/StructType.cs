@@ -45,21 +45,42 @@ public class StructType
 
 public class StructInstance : Value
 {
-    public string StructName { get; }
-    public StructType Type { get; }
+    public string StructName { get; private set; }
+    public StructType Type { get; private set; }
     public Dictionary<string, Value> Fields { get; } = new Dictionary<string, Value>();
-
-    public StructInstance(StructType structType)
-        : base(ValueType.Struct, null)
+    
+    // Nuevo constructor que utiliza un enfoque diferente para evitar la validación circular
+    public StructInstance(StructType structType) 
+        : base(ValueType.Struct) // Usa el constructor protegido que no valida data
     {
-        StructName = structType.Name;
+        if (structType == null)
+            throw new Exception("No se puede crear una instancia de struct con un tipo nulo");
+            
         Type = structType;
-
+        StructName = structType.Name;
+        
+        // Asignar this como el Data para resolver la referencia circular
+        this.Data = this;
+    }
+    
+    // Nuevo constructor estático que maneja la creación e inicialización
+    public static StructInstance Create(StructType structType)
+    {
+        if (structType == null)
+            throw new Exception("No se puede crear una instancia de struct con un tipo nulo");
+            
+        var instance = new StructInstance(structType);
+        
+        // Inicializar campos con valores predeterminados
         foreach (var field in structType.Fields)
         {
-            Fields[field.Key] = Value.DefaultForType(field.Value);
+            var defaultValue = Value.DefaultForType(field.Value);
+            instance.Fields[field.Key] = defaultValue;
         }
+        
+        return instance;
     }
+    
 
     public void SetField(string name, Value value)
     {
