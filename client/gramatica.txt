@@ -1,0 +1,126 @@
+<program> ::= { <structDecl> | <funcDecl> | <instruction> } EOF
+
+<instruction> ::= <declaracion>
+               | <assignacion>
+               | <exprStmt>
+               | <printStmt>
+               | <ifStmt>
+               | <switchStmt>
+               | <forStmt>
+               | <incDecStmt>
+               | <returnStmt>
+               | <continueStmt>
+               | <breakStmt>
+
+<conversionFunc> ::= STRCONV '.' ATOI '(' <expresion> ')'
+                   | STRCONV '.' PARSERFLOAT '(' <expresion> ')'
+                   | REFLECT '.' TYPEOF '(' <expresion> ')'
+
+<funcDecl> ::= FUNC IDENTIFIER '(' <paramsList>? ')' <typeSpec>? <bloque>
+            | FUNC '(' IDENTIFIER IDENTIFIER ')' IDENTIFIER '(' <paramsList>? ')' <typeSpec>? <bloque>
+
+<paramsList> ::= <param> { ',' <param> }
+
+<param> ::= IDENTIFIER <typeSpec>
+
+<structDecl> ::= STRUCT IDENTIFIER '{' { <fieldDecl> } '}' ';'?
+
+<fieldDecl> ::= <typeSpec> IDENTIFIER ';'
+
+<structLiteral> ::= '{' <fieldValue> { ',' <fieldValue> } ','? '}'
+
+<fieldValue> ::= IDENTIFIER ':' <expresion>
+
+<bloque> ::= '{' { <instruction> } '}'
+
+<breakStmt> ::= BREAK ';'?
+
+<continueStmt> ::= CONTINUE ';'?
+
+<returnStmt> ::= RETURN <expresion>? ';'?
+
+<incDecStmt> ::= IDENTIFIER ( '++' | '--' ) ';'?
+
+<forStmt> ::= <forWhileStmt> | <forThreePartStmt>
+
+<forWhileStmt> ::= FOR <expresion> <bloque>
+
+<forThreePartStmt> ::= FOR <forInit>? ';' <expresion>? ';' <forPost>? <bloque>
+
+<forInit> ::= <assignacion> | <declaracion>
+
+<forPost> ::= <assignacion> | <exprStmt> | <incDecStmt>
+
+<switchStmt> ::= SWITCH ( '(' <expresion> ')' | <expresion> ) '{' { <caseStmt> } <defaultStmt>? '}'
+
+<caseStmt> ::= CASE <expresion> ':' { <instruction> }
+
+<defaultStmt> ::= DEFAULT ':' { <instruction> }
+
+<ifStmt> ::= IF ( '('? <expresion> ')'? ) <bloque> { <elseIfStmt> } <elseStmt>?
+
+<elseIfStmt> ::= ELSE IF ( '('? <expresion> ')'? ) <bloque>
+
+<elseStmt> ::= ELSE <bloque>
+
+<declaracion> ::= VAR IDENTIFIER <typeSpec>? ( '=' <expresion> )? ';'?
+                | IDENTIFIER IDENTIFIER '=' <structLiteral> ';'?
+                | VAR IDENTIFIER '=' FUNC '(' <paramsList>? ')' <typeSpec>? <bloque> ';'?
+
+<assignacion> ::= ( IDENTIFIER | IDENTIFIER { '.' IDENTIFIER } ) ( '=' | '+=' | ':=' | '-=' ) <expresion> ';'?
+
+<exprStmt> ::= <expresion> ';'?
+
+<printStmt> ::= FMT '.' PRINTLN '(' <argumentList>? ')' ';'?
+
+<argumentList> ::= <expresion> { ',' <expresion> }
+
+<expresion> ::= <logicalOrExpr>
+
+<logicalOrExpr> ::= <logicalAndExpr> { '||' <logicalAndExpr> }
+
+<logicalAndExpr> ::= <equalityExpr> { '&&' <equalityExpr> }
+
+<equalityExpr> ::= <relationalExpr> { ( '==' | '!=' ) <relationalExpr> }
+
+<relationalExpr> ::= <addExpr> { ( '>' | '<' | '>=' | '<=' ) <addExpr> }
+
+<addExpr> ::= <mulExpr> { ( '+' | '-' ) <mulExpr> }
+
+<mulExpr> ::= <unaryExpr> { ( '*' | '/' | '%' ) <unaryExpr> }
+
+<unaryExpr> ::= '-' <unaryExpr>
+              | '!' <unaryExpr>
+              | <primary>
+              | <sliceFunc>
+              | <conversionFunc>
+
+<sliceFunc> ::= LEN '(' <expresion> ')'
+              | APPEND '(' <expresion> { ',' <expresion> } ')'
+              | SLICES '.' INDEX '(' <expresion> ',' <expresion> ')'
+              | STRINGS '.' JOIN '(' <expresion> ',' <expresion> ')'
+
+<sliceType> ::= '[' ']' <typeSpec>
+
+<typeSpec> ::= INT_TYPE
+             | FLOAT64_TYPE
+             | STRING_TYPE
+             | BOOL_TYPE
+             | RUNE_TYPE
+             | IDENTIFIER
+             | <sliceType>
+
+<sliceLiteral> ::= <sliceType> '{' <expresion> { ',' <expresion> } '}'
+
+<primary> ::= <functCall>
+            | IDENTIFIER { '[' <expresion> ']' } { '.' IDENTIFIER }
+            | INT_LIT
+            | FLOAT_LIT
+            | STRING_LIT
+            | RUNE_LIT
+            | '(' <expresion> ')'
+            | <sliceLiteral>
+            | <structLiteral>
+
+<functCall> ::= IDENTIFIER '(' <argumentList>? ')'
+              | IDENTIFIER { '.' IDENTIFIER } '(' <argumentList>? ')'
