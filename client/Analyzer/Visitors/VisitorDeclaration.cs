@@ -9,12 +9,44 @@ public partial class Visitor
         int line = context.Start.Line;
         int column = context.Start.Column;
 
+        // 1. Manejo de struct (ya lo tienes sólido)
         if (IsStructDeclaration(context))
         {
             return HandleStructDeclaration(context, line, column);
         }
 
+        // 2. Declaración corta con :=
+        if (context.ASIGNACION_DECLARACION() != null)
+        {
+            return HandleShortDeclaration(context, line, column);
+        }
+
+        // 3. Declaraciones tradicionales con var
         return HandleVariableDeclaration(context, line, column);
+    }
+
+    private Value HandleShortDeclaration(DeclaracionContext context, int line, int column)
+    {
+        string varName = context.IDENTIFIER(0).GetText();
+        Value initialValue = Visit(context.expresion());
+
+        if (currentEnv.HasVariableInCurrentScope(varName))
+        {
+            AddSemanticError(line, column, $"La variable '{varName}' ya ha sido declarada en este ámbito.");
+            return Value.FromNil();
+        }
+
+        try
+        {
+            currentEnv.DeclareVariable(varName, initialValue, line, column);
+        }
+        catch (Exception ex)
+        {
+            AddSemanticError(line, column, ex.Message);
+            return Value.FromNil();
+        }
+
+        return initialValue;
     }
 
     private bool IsStructDeclaration(DeclaracionContext context)
@@ -243,29 +275,24 @@ public partial class Visitor
         };
     }
 
-    private Value GetDefaultValueForFieldType(ValueType type, string? structTypeName = null)
+    private Value GetDefaultValueForFieldType(ValueType type)
     {
         switch (type)
         {
             case ValueType.Int:
-                return new Value(ValueType.Int, 0);
+                return Value.FromInt(0);
             case ValueType.Float:
-                return new Value(ValueType.Float, 0.0);
+                return Value.FromFloat(0.0);
             case ValueType.String:
-                return new Value(ValueType.String, "");
+                return Value.FromString("");
             case ValueType.Bool:
-                return new Value(ValueType.Bool, false);
+                return Value.FromBool(false);
             case ValueType.Rune:
-                return new Value(ValueType.Rune, '\0');
+                return Value.FromRune('\0');
             case ValueType.Slice:
-                return new Value(ValueType.Slice, new Slice(ValueType.Nil));
+                return new Value(ValueType.Slice, null); // O implementar un slice vacío apropiado
             case ValueType.Struct:
-                if (!string.IsNullOrEmpty(structTypeName) && table.IsStructType(structTypeName))
-                {
-                    StructType structType = table.GetStruct(structTypeName);
-                    return CreateEmptyStructValue(structType);
-                }
-                return Value.FromNil();
+                return Value.FromNil(); 
             default:
                 return Value.FromNil();
         }
