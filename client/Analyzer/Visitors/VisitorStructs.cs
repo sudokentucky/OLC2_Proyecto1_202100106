@@ -4,16 +4,43 @@ using static gramaticaParser;
 
 public partial class Visitor
 {
+    // Conjunto para rastrear structs en proceso de definición
+    private HashSet<string> structsBeingDefined = new HashSet<string>();
+
     public override Value VisitStructDecl([NotNull] StructDeclContext context)
     {
         string structName = context.IDENTIFIER().GetText();
+        int line = context.Start.Line;
+        int column = context.Start.Column;
 
+        // Detectar si hay campos
+        if (context.fieldDecl().Length == 0)
+        {
+            AddSemanticError(line, column, $"El struct '{structName}' no puede estar vacío");
+            return Value.FromNil();
+        }
+
+        // Marcar este struct como "en definición"
+        structsBeingDefined.Add(structName);
+
+        // Registrar struct en la tabla de símbolos
         currentStruct = new StructType(structName);
+        try
+        {
+            table.AddStruct(currentStruct);
+        }
+        catch (Exception ex)
+        {
+            AddSemanticError(line, column, ex.Message);
+            structsBeingDefined.Remove(structName);
+            return Value.FromNil();
+        }
 
+        // Agregar campos
         AddFieldsToStruct(context);
 
-        table.AddStruct(currentStruct);
-
+        // Completar la definición
+        structsBeingDefined.Remove(structName);
         currentStruct = null;
 
         return Value.FromNil();
@@ -26,7 +53,7 @@ public partial class Visitor
             Visit(fieldContext);
         }
     }
-
+    
     public override Value VisitFieldDecl([NotNull] FieldDeclContext context)
     {
         ValueType fieldType = GetTypeFromTypeSpec(context.typeSpec());
