@@ -142,7 +142,7 @@ function CommandExecution({
                   }}
                 />
               </div>
-              
+
             </div>
           </div>
 
@@ -159,8 +159,8 @@ function CommandExecution({
       </div>
 
       <footer className="fixed bottom-0 left-0 w-full py-4 text-center text-sm text-gray-500">
-  © {new Date().getFullYear()} Keneth Lopez. Todos los derechos reservados.
-</footer>
+        © {new Date().getFullYear()} Keneth Lopez. Todos los derechos reservados.
+      </footer>
 
     </div>
   );
