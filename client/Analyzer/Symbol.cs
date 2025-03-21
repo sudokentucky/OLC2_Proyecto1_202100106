@@ -10,7 +10,7 @@ public enum ValueType
     Nil
 }
 
-public class Value
+public class Value //valor en tiempo de ejecución
 {
     public ValueType Type { get; protected set; }
     public object Data { get; protected set; }
@@ -24,9 +24,7 @@ public class Value
         Data = data;
     }
 
-    
-    // Accesores tipados
-    public int AsInt() => (int)Data;
+        public int AsInt() => (int)Data;
     public double AsFloat() => (double)Data;
     public bool AsBool() => (bool)Data;
     public string AsString() => (string)Data;
@@ -47,7 +45,6 @@ public class Value
     public static Value FromSlice(Slice s)   => new Value(ValueType.Slice, s);
     public static Value FromStruct(StructInstance s) => new Value(ValueType.Struct, s);
     public static Value FromNil()            => new Value(ValueType.Nil, null);
-// Nuevo constructor protegido que omite la validación.
     protected Value(ValueType type)
     {
         Type = type;
@@ -101,7 +98,7 @@ private bool ValidateType(ValueType type, object data)
     };
 }
 
-public class Symbol
+public class Symbol //símbolo en tiempo de compilación
 {
     public string Name { get; set; }
     public ValueType DeclaredType { get; set; }
