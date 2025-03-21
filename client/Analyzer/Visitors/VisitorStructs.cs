@@ -4,157 +4,181 @@ using static gramaticaParser;
 
 public partial class Visitor
 {
-    public override Value VisitStructDecl([NotNull] gramaticaParser.StructDeclContext context)
+    public override Value VisitStructDecl([NotNull] StructDeclContext context)
     {
         string structName = context.IDENTIFIER().GetText();
-        Console.WriteLine("DEBUG: Iniciando declaración de struct: " + structName);
+
         currentStruct = new StructType(structName);
-        
-        foreach (var fieldContext in context.fieldDecl())
-        {
-            Console.WriteLine("DEBUG: Procesando campo en struct '" + structName + "'");
-            Visit(fieldContext); 
-        }
-        
+
+        AddFieldsToStruct(context);
+
         table.AddStruct(currentStruct);
-        Console.WriteLine("DEBUG: Struct '" + structName + "' agregado a la tabla de símbolos.");
-        currentStruct = null; 
+
+        currentStruct = null;
+
         return Value.FromNil();
     }
 
-    public override Value VisitFieldDecl([NotNull] gramaticaParser.FieldDeclContext context)
+    private void AddFieldsToStruct(StructDeclContext context)
+    {
+        foreach (var fieldContext in context.fieldDecl())
+        {
+            Visit(fieldContext);
+        }
+    }
+
+    public override Value VisitFieldDecl([NotNull] FieldDeclContext context)
     {
         ValueType fieldType = GetTypeFromTypeSpec(context.typeSpec());
         string fieldName = context.IDENTIFIER().GetText();
-        Console.WriteLine("DEBUG: Declarando campo '" + fieldName + "' de tipo " + fieldType.ToString());
+
         currentStruct.AddField(fieldName, fieldType);
+
         return Value.FromNil();
     }
 
-    public override Value VisitStructLiteral([NotNull] gramaticaParser.StructLiteralContext context)
+    public override Value VisitStructLiteral([NotNull] StructLiteralContext context)
     {
-        Console.WriteLine("DEBUG: Iniciando instanciación de literal de struct.");
-        
-        string structTypeName = null;
-        
+        string structTypeName = ResolveStructTypeName(context);
+
+        if (string.IsNullOrEmpty(structTypeName))
+        {
+            AddSemanticError(context.Start.Line, context.Start.Column,
+                "No se ha especificado un tipo de struct para el literal");
+            return Value.FromNil();
+        }
+
+        if (!TryGetStructDefinition(structTypeName, context.Start.Line, context.Start.Column, out StructType structType))
+        {
+            return Value.FromNil();
+        }
+
+        StructInstance instance = InitializeStructInstanceWithDefaults(structType);
+
+        AssignFieldValues(context, instance);
+
+        return Value.FromStruct(instance);
+    }
+
+    private string ResolveStructTypeName(StructLiteralContext context)
+    {
+        if (!string.IsNullOrEmpty(currentStructTypeName))
+        {
+            return currentStructTypeName;
+        }
+
         if (context.Parent is PrimaryContext primary)
         {
-            if (primary.Parent?.Parent is DeclaracionContext decl && decl.IDENTIFIER().Length > 1)
+            if (primary.Parent?.Parent is DeclaracionContext decl && decl.IDENTIFIER().Length == 2)
             {
-                structTypeName = decl.IDENTIFIER(0).GetText();
-                Console.WriteLine($"DEBUG: Tipo de struct obtenido desde declaración: '{structTypeName}'");
+                string typeName = decl.IDENTIFIER(0).GetText();
+
+                if (table.IsStructType(typeName))
+                    return typeName;
             }
-            else if (primary.Parent?.Parent is AssignacionContext assign)
+
+            if (primary.Parent?.Parent is AssignacionContext assign)
             {
-                try {
-                    // Intentar obtener el tipo de la variable izquierda
-                    string varName = assign.IDENTIFIER().GetText();
+                string varName = assign.IDENTIFIER(0).GetText();
+
+                try
+                {
                     Value leftValue = currentEnv.GetVariable(varName);
+
                     if (leftValue.Type == ValueType.Struct)
                     {
-                        structTypeName = leftValue.AsStruct().Type.Name;
-                        Console.WriteLine($"DEBUG: Tipo de struct obtenido desde variable: '{structTypeName}'");
+                        string structName = leftValue.AsStruct().StructName;
+                        return structName;
                     }
-                } catch (Exception) {
+                }
+                catch
+                {
+                    // Ignorar, ya se maneja después si el structName es vacío
                 }
             }
         }
-        
-        if (string.IsNullOrEmpty(structTypeName))
-        {
-            structTypeName = currentStructTypeName;
-            Console.WriteLine($"DEBUG: Usando currentStructTypeName: '{structTypeName}'");
-        }
-        
-        if (string.IsNullOrEmpty(structTypeName))
-        {
-            string errorMsg = "No se ha especificado un tipo de struct para el literal";
-            Console.WriteLine($"ERROR: {errorMsg}");
-            AddSemanticError(context.Start.Line, context.Start.Column, errorMsg);
-            return Value.FromNil();
-        }
-        
-        StructType structType;
+
+        return string.Empty;
+    }
+
+    private bool TryGetStructDefinition(string structTypeName, int line, int column, out StructType structType)
+    {
+        structType = null;
+
         try
         {
-            Console.WriteLine($"DEBUG: Buscando definición del struct '{structTypeName}' en la tabla.");
             structType = table.GetStruct(structTypeName);
+            return true;
         }
         catch (Exception ex)
         {
-            AddSemanticError(context.Start.Line, context.Start.Column, ex.Message);
-            return Value.FromNil();
+            AddSemanticError(line, column, ex.Message);
+            return false;
         }
-        
-        StructInstance instance = new StructInstance(structType);
-        Console.WriteLine($"DEBUG: Creando instancia de struct del tipo '{structTypeName}'.");
-        
+    }
+
+    private StructInstance InitializeStructInstanceWithDefaults(StructType structType)
+    {
+        var instance = new StructInstance(structType);
+
         foreach (var field in structType.Fields)
         {
-            Value defaultValue = GetDefaultValueForFieldType(field.Value);
+            var defaultValue = GetDefaultValueForFieldType(field.Value);
             instance.SetField(field.Key, defaultValue);
-            Console.WriteLine($"DEBUG: Inicializado campo '{field.Key}' con valor predeterminado para {field.Value}.");
         }
-        
+
+        return instance;
+    }
+
+    private void AssignFieldValues(StructLiteralContext context, StructInstance instance)
+    {
         foreach (var fieldValueContext in context.fieldValue())
         {
             string fieldName = fieldValueContext.IDENTIFIER().GetText();
-            Console.WriteLine($"DEBUG: Procesando valor para el campo '{fieldName}'.");
             Value fieldValue = Visit(fieldValueContext.expresion());
-            Console.WriteLine($"DEBUG: Valor evaluado para '{fieldName}': {fieldValue}");
+
             try
             {
                 instance.SetField(fieldName, fieldValue);
-                Console.WriteLine($"DEBUG: Campo '{fieldName}' asignado exitosamente.");
             }
             catch (Exception ex)
             {
                 AddSemanticError(fieldValueContext.Start.Line, fieldValueContext.Start.Column, ex.Message);
-                Console.WriteLine($"DEBUG: Error asignando el campo '{fieldName}': {ex.Message}");
             }
         }
-        
-        Console.WriteLine("DEBUG: Instanciación de struct completada.");
-        return Value.FromStruct(instance);
     }
 
     private ValueType GetTypeFromTypeSpec(gramaticaParser.TypeSpecContext context)
     {
         if (context.INT_TYPE() != null)
         {
-            Console.WriteLine("DEBUG: Tipo detectado: Int");
             return ValueType.Int;
         }
         else if (context.FLOAT64_TYPE() != null)
         {
-            Console.WriteLine("DEBUG: Tipo detectado: Float");
             return ValueType.Float;
         }
         else if (context.STRING_TYPE() != null)
         {
-            Console.WriteLine("DEBUG: Tipo detectado: String");
             return ValueType.String;
         }
         else if (context.BOOL_TYPE() != null)
         {
-            Console.WriteLine("DEBUG: Tipo detectado: Bool");
             return ValueType.Bool;
         }
         else if (context.RUNE_TYPE() != null)
         {
-            Console.WriteLine("DEBUG: Tipo detectado: Rune");
             return ValueType.Rune;
         }
         else if (context.sliceType() != null)
         {
-            Console.WriteLine("DEBUG: Tipo detectado: Slice");
-            Value sliceValue = Visit(context.sliceType());
-            return ValueType.Slice; 
+            Visit(context.sliceType());
+            return ValueType.Slice;
         }
         else if (context.IDENTIFIER() != null)
         {
             string structName = context.IDENTIFIER().GetText();
-            Console.WriteLine("DEBUG: Tipo detectado de struct: " + structName);
+
             try
             {
                 table.GetStruct(structName);
@@ -162,12 +186,11 @@ public partial class Visitor
             }
             catch (Exception ex)
             {
-                AddSemanticError(context.Start.Line, context.Start.Column, 
+                AddSemanticError(context.Start.Line, context.Start.Column,
                     $"El tipo '{structName}' no está definido. Detalles: {ex.Message}");
             }
         }
-        
-        Console.WriteLine("DEBUG: Tipo desconocido, retornando Nil.");
+
         return ValueType.Nil;
     }
 }
