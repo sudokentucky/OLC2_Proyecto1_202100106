@@ -15,6 +15,7 @@ public class Compile : Controller
     // Almacenamos estáticamente los últimos errores y la última tabla de símbolos
     private static List<ErrorReportEntry> lastErrors = new List<ErrorReportEntry>();
     private static SymbolTable lastSymbolTable = new SymbolTable();
+    private static AstNode lastAstRoot = null;
 
     public Compile(ILogger<Compile> logger)
     {
@@ -88,6 +89,8 @@ public IActionResult Post([FromBody] CompileRequest request)
         }
 
         lastSymbolTable = visitor.GetSymbolTable();
+        var astVisitor = new ASTVisitor();
+            lastAstRoot = astVisitor.Visit(tree);
 
         return Ok(new
         {
@@ -159,32 +162,32 @@ private string FormatFunction(Function fn)
     string result = $"func {fn.Name ?? "unnamed"}({paramStr}) -> {returnStr}";
     return result;
 }
-/*
+
 [HttpGet("generateDot")]
-public IActionResult GenerateDot()
-{
-    try
+    public IActionResult GenerateDot()
     {
-        var inputStream = new AntlrInputStream("your code here... o pásalo de algún lado");
-        var lexer = new gramaticaLexer(inputStream);
-        var tokens = new CommonTokenStream(lexer);
-        var parser = new gramaticaParser(tokens);
+        try
+        {
+            if (lastAstRoot == null)
+            {
+                return BadRequest(new { error = "No se ha generado un AST aún. Primero compila el código." });
+            }
 
-        var tree = parser.program();
+            var dotGenerator = new DotGenerator();
+            var dotCode = dotGenerator.GenerateDot(lastAstRoot);
 
-        var astBuilder = new AstBuilderVisitor();
-        var rootNode = astBuilder.Visit(tree);
-
-        var dotGenerator = new DotGenerator();
-        var dotCode = dotGenerator.GenerateDot(rootNode);
-
-        return Content(dotCode, "text/plain");
+            return Content(dotCode, "text/plain");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al generar el DOT.");
+            return StatusCode(500, new
+            {
+                error = "Error al generar el DOT.",
+                details = ex.Message
+            });
+        }
     }
-    catch (Exception ex)
-    {
-        return StatusCode(500, $"Error generando el DOT: {ex.Message}");
-    }
-}
-*/
+
 }
 
