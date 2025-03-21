@@ -122,6 +122,12 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitIncDecStmt([NotNull] gramaticaParser.IncDecStmtContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.forRangeStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitForRangeStmt([NotNull] gramaticaParser.ForRangeStmtContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="gramaticaParser.forStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -217,6 +223,12 @@ public interface IgramaticaVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitArgumentList([NotNull] gramaticaParser.ArgumentListContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="gramaticaParser.expresionOrSliceLiteral"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitExpresionOrSliceLiteral([NotNull] gramaticaParser.ExpresionOrSliceLiteralContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="gramaticaParser.expresion"/>.
 	/// </summary>

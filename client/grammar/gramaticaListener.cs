@@ -181,6 +181,16 @@ public interface IgramaticaListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitIncDecStmt([NotNull] gramaticaParser.IncDecStmtContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forRangeStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterForRangeStmt([NotNull] gramaticaParser.ForRangeStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forRangeStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitForRangeStmt([NotNull] gramaticaParser.ForRangeStmtContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.forStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -340,6 +350,16 @@ public interface IgramaticaListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitArgumentList([NotNull] gramaticaParser.ArgumentListContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.expresionOrSliceLiteral"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterExpresionOrSliceLiteral([NotNull] gramaticaParser.ExpresionOrSliceLiteralContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.expresionOrSliceLiteral"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitExpresionOrSliceLiteral([NotNull] gramaticaParser.ExpresionOrSliceLiteralContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.expresion"/>.
 	/// </summary>

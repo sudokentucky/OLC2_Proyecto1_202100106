@@ -216,6 +216,18 @@ public partial class gramaticaBaseListener : IgramaticaListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitIncDecStmt([NotNull] gramaticaParser.IncDecStmtContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.forRangeStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterForRangeStmt([NotNull] gramaticaParser.ForRangeStmtContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.forRangeStmt"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitForRangeStmt([NotNull] gramaticaParser.ForRangeStmtContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.forStmt"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -407,6 +419,18 @@ public partial class gramaticaBaseListener : IgramaticaListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitArgumentList([NotNull] gramaticaParser.ArgumentListContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="gramaticaParser.expresionOrSliceLiteral"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterExpresionOrSliceLiteral([NotNull] gramaticaParser.ExpresionOrSliceLiteralContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="gramaticaParser.expresionOrSliceLiteral"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitExpresionOrSliceLiteral([NotNull] gramaticaParser.ExpresionOrSliceLiteralContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="gramaticaParser.expresion"/>.
 	/// <para>The default implementation does nothing.</para>
