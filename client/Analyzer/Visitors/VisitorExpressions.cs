@@ -73,7 +73,10 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
     {
         return Visit(context.functCall());
     }
-
+    if (context.NIL() != null)
+    {
+        return Value.FromNil();
+    }
     if (context.INT_LIT() != null)
     {
         string valueText = context.INT_LIT().GetText();
@@ -103,10 +106,6 @@ public override Value VisitPrimary([NotNull] PrimaryContext context)
         return Visit(context.sliceLiteral());
     }
 
-    if (context.structLiteral() != null)
-    {
-        return Visit(context.structLiteral());
-    }
 
     if (context.IDENTIFIER() != null && context.IDENTIFIER().Length > 0)
     {
@@ -159,35 +158,57 @@ public override Value VisitTypeSpec([NotNull] gramaticaParser.TypeSpecContext co
 }
 
     private Value EvaluateEquality(Value left, Value right, string op, int line, int col)
+{
+    // Si ambos son nil, siempre son iguales
+    if (left.Type == ValueType.Nil && right.Type == ValueType.Nil)
     {
-        if (IsNumeric(left) != 0 && IsNumeric(right) != 0)
-        {
-            double l = ToDouble(left);
-            double r = ToDouble(right);
-            bool result = (op == "==") ? (l == r) : (l != r);
-            return new Value(ValueType.Bool, result);
-        }
-        else if (left.Type == ValueType.Bool && right.Type == ValueType.Bool)
-        {
-            bool result = (op == "==")
-                ? (left.AsBool() == right.AsBool())
-                : (left.AsBool() != right.AsBool());
-            return new Value(ValueType.Bool, result);
-        }
-        else if (left.Type == ValueType.String && right.Type == ValueType.String)
-        {
-            bool result = (op == "==")
-                ? (left.AsString() == right.AsString())
-                : (left.AsString() != right.AsString());
-            return new Value(ValueType.Bool, result);
-        }
-        else
-        {
-            AddSemanticError(line, col,
-                $"No se puede aplicar '{op}' entre {left.Type} y {right.Type}.");
-            return new Value(ValueType.Bool, false);
-        }
+        bool result = (op == "=="); // true para ==, false para !=
+        return Value.FromBool(result);
     }
+    
+    // Si sólo uno es nil, nunca son iguales
+    if (left.Type == ValueType.Nil || right.Type == ValueType.Nil)
+    {
+        bool result = (op == "!="); // false para ==, true para !=
+        return Value.FromBool(result);
+    }
+    
+    // El resto del método queda igual para otros tipos
+    if (IsNumeric(left) != 0 && IsNumeric(right) != 0)
+    {
+        double l = ToDouble(left);
+        double r = ToDouble(right);
+        bool result = (op == "==") ? (l == r) : (l != r);
+        return new Value(ValueType.Bool, result);
+    }
+    else if (left.Type == ValueType.Bool && right.Type == ValueType.Bool)
+    {
+        bool result = (op == "==")
+            ? (left.AsBool() == right.AsBool())
+            : (left.AsBool() != right.AsBool());
+        return new Value(ValueType.Bool, result);
+    }
+    else if (left.Type == ValueType.String && right.Type == ValueType.String)
+    {
+        bool result = (op == "==")
+            ? (left.AsString() == right.AsString())
+            : (left.AsString() != right.AsString());
+        return new Value(ValueType.Bool, result);
+    }
+    else if (left.Type == ValueType.Struct && right.Type == ValueType.Struct)
+    {
+        bool result = (op == "==") 
+            ? (left.AsStruct() == right.AsStruct())
+            : (left.AsStruct() != right.AsStruct());
+        return Value.FromBool(result);
+    }
+    else
+    {
+        AddSemanticError(line, col,
+            $"No se puede aplicar '{op}' entre {left.Type} y {right.Type}.");
+        return new Value(ValueType.Bool, false);
+    }
+}
 
     private Value EvaluateRelational(Value left, Value right, string op, int line, int col)
     {
