@@ -9,19 +9,16 @@ public partial class Visitor
         int line = context.Start.Line;
         int column = context.Start.Column;
 
-        // 1. Manejo de struct (ya lo tienes sólido)
         if (IsStructDeclaration(context))
         {
             return HandleStructDeclaration(context, line, column);
         }
 
-        // 2. Declaración corta con :=
         if (context.ASIGNACION_DECLARACION() != null)
         {
             return HandleShortDeclaration(context, line, column);
         }
 
-        // 3. Declaraciones tradicionales con var
         return HandleVariableDeclaration(context, line, column);
     }
 
@@ -100,20 +97,6 @@ public partial class Visitor
             AddSemanticError(line, column, $"Error declarando struct: {ex.Message}");
             return Value.FromNil();
         }
-    }
-
-    private Value CreateEmptyStructValue(StructType structType)
-    {
-        StructInstance instance = new StructInstance(structType);
-
-        foreach (var field in structType.Fields)
-        {
-            ValueType fieldType = field.Value;
-            Value defaultValue = GetDefaultValueForFieldType(fieldType);
-            instance.SetField(field.Key, defaultValue);
-        }
-
-        return Value.FromStruct(instance);
     }
 
     private Value HandleVariableDeclaration(DeclaracionContext context, int line, int column)
@@ -290,7 +273,7 @@ public partial class Visitor
             case ValueType.Rune:
                 return Value.FromRune('\0');
             case ValueType.Slice:
-                return new Value(ValueType.Slice, null); // O implementar un slice vacío apropiado
+                return new Value(ValueType.Slice, null); 
             case ValueType.Struct:
                 return Value.FromNil(); 
             default:
