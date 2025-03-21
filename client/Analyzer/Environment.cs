@@ -68,4 +68,10 @@ public void SetVariable(string name, Value value)
             throw new Exception($"Variable '{name}' no existe en ningún ámbito.");
         }
     }
+    
+    public bool HasVariableInCurrentScope(string name)
+{
+    return variables.ContainsKey(name);
+}
+
 }
