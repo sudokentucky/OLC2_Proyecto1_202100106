@@ -6,7 +6,9 @@ PRINTLN                 : 'Println';
 IF                      : 'if';
 ELSE                    : 'else';
 FOR                     : 'for';
+RANGE                   : 'range';
 SWITCH                  : 'switch';
+NIL                     : 'nil' ;
 CASE                    : 'case';
 DEFAULT                 : 'default';
 BREAK                   : 'break';
@@ -16,7 +18,7 @@ LEN                     : 'len';
 APPEND                  : 'append';
 SLICES                  : 'slices';
 STRINGS                 : 'strings';
-JOIN                    : 'join';
+JOIN                    : 'Join';
 INDEX                   : 'Index';
 STRUCT                  : 'struct';
 FUNC                    : 'func';
@@ -151,9 +153,14 @@ incDecStmt
     : IDENTIFIER (INCREMENTO | DECREMENTO) PUNTO_Y_COMA?
     ;
 
+forRangeStmt
+    : FOR IDENTIFIER (COMA IDENTIFIER)? ASIGNACION_DECLARACION RANGE expresion bloque
+    ;
+
 forStmt
     : forWhileStmt
     | forThreePartStmt
+    | forRangeStmt
     ;
 
 forWhileStmt
@@ -201,13 +208,19 @@ elseStmt
 
 declaracion
     : VAR IDENTIFIER typeSpec? (ASIGNACION expresion)? PUNTO_Y_COMA?
-    | IDENTIFIER IDENTIFIER ASIGNACION structLiteral PUNTO_Y_COMA? 
-    | VAR IDENTIFIER ASIGNACION FUNC PARENTESIS_IZQ paramsList? PARENTESIS_DER typeSpec? bloque PUNTO_Y_COMA? 
+    | IDENTIFIER IDENTIFIER ASIGNACION structLiteral PUNTO_Y_COMA?
+    | VAR IDENTIFIER ASIGNACION FUNC PARENTESIS_IZQ paramsList? PARENTESIS_DER typeSpec? bloque PUNTO_Y_COMA?
+    | IDENTIFIER ASIGNACION_DECLARACION expresion PUNTO_Y_COMA?  //declaracion de Slice
     ;
+
     
 assignacion
-    : (IDENTIFIER | IDENTIFIER (PUNTO IDENTIFIER)+) (ASIGNACION | ASIGNACIO_INCREMENTO | ASIGNACION_DECLARACION |ASIGNACIO_DECREMENTO) expresion PUNTO_Y_COMA?
+    : (IDENTIFIER (CORCHETE_IZQ expresion CORCHETE_DER)* (PUNTO IDENTIFIER)*)
+      (ASIGNACION | ASIGNACIO_INCREMENTO | ASIGNACIO_DECREMENTO)
+      expresion
+      PUNTO_Y_COMA?
     ;
+
 
 exprStmt
     : expresion PUNTO_Y_COMA?
@@ -219,6 +232,11 @@ printStmt
 
 argumentList
     : expresion (COMA expresion)*
+    ;
+
+expresionOrSliceLiteral
+    : expresion
+    | sliceLiteral
     ;
 
 expresion: logicalOrExpr;
@@ -277,7 +295,8 @@ typeSpec
     ;
 
 sliceLiteral
-    : sliceType LLAVE_IZQ (expresion (COMA expresion)*)? LLAVE_DER
+    : sliceType LLAVE_IZQ (expresionOrSliceLiteral (COMA expresionOrSliceLiteral)* COMA?)? LLAVE_DER
+    | LLAVE_IZQ (expresionOrSliceLiteral (COMA expresionOrSliceLiteral)* COMA?)? LLAVE_DER
     ;
 
 
@@ -288,14 +307,13 @@ primary
     | FLOAT_LIT
     | STRING_LIT
     | RUNE_LIT
+    | NIL
     | PARENTESIS_IZQ expresion PARENTESIS_DER  
     | sliceLiteral
-    | structLiteral
     ;
+
 
 functCall
     : IDENTIFIER PARENTESIS_IZQ argumentList? PARENTESIS_DER
     | IDENTIFIER (PUNTO IDENTIFIER)+ PARENTESIS_IZQ argumentList? PARENTESIS_DER
     ;
-
-
