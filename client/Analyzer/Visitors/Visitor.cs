@@ -12,11 +12,11 @@ public partial class Visitor : gramaticaBaseVisitor<Value>
     private Environment currentEnv;
     private StructType currentStruct;
     private string currentStructTypeName;
-    
 
 
-    private int loopDepth = 0;        
-    private int switchDepth = 0;  
+
+    private int loopDepth = 0;
+    private int switchDepth = 0;
 
     public Visitor()
     {
@@ -38,48 +38,62 @@ public partial class Visitor : gramaticaBaseVisitor<Value>
 
 public override Value VisitProgram([NotNull] ProgramContext context)
 {
-
-    int structCount = context.structDecl()?.Length ?? 0;
-    
+    // Procesar definiciones de structs
     foreach (var structDecl in context.structDecl())
     {
-        string structName = structDecl.IDENTIFIER()?.GetText() ?? "anónima";
-        try {
+        try
+        {
             Visit(structDecl);
         }
-        catch (Exception ex) {
-            AddSemanticError(structDecl.Start.Line, structDecl.Start.Column, 
-                            $"Error al procesar estructura: {ex.Message}");
+        catch (Exception ex)
+        {
+            AddSemanticError(structDecl.Start.Line, structDecl.Start.Column,
+                $"Error al procesar estructura: {ex.Message}");
         }
     }
-    
+
+    // Procesar definiciones de funciones
     foreach (var funcDecl in context.funcDecl())
     {
-
-        try {
+        try
+        {
             Visit(funcDecl);
         }
-        catch (Exception ex) {
-            AddSemanticError(funcDecl.Start.Line, funcDecl.Start.Column, 
-                           $"Error al procesar función: {ex.Message}");
+        catch (Exception ex)
+        {
+            AddSemanticError(funcDecl.Start.Line, funcDecl.Start.Column,
+                $"Error al procesar función: {ex.Message}");
         }
     }
-    
-    int instrIndex = 0;
-    foreach (var instr in context.instruction())
-    {
-        instrIndex++;
-        try {
-            Value result = Visit(instr);
-        }
-        catch (Exception ex) {
-            AddSemanticError(instr.Start.Line, instr.Start.Column, 
-                           $"Error al ejecutar instrucción: {ex.Message}");
-        }
-    }
-    
 
-                
+    // Si existe main, se eecuta
+    if (table.IsFunctionDefined("main"))
+    {
+        try
+        {
+            CallFunction("main", Array.Empty<Value>(), 0, 0);
+        }
+        catch (Exception ex)
+        {
+            AddSemanticError(0, 0, $"Error al ejecutar función main: {ex.Message}");
+        }
+    }
+    else
+    {
+        foreach (var instr in context.instruction())
+        {
+            try
+            {
+                Visit(instr);
+            }
+            catch (Exception ex)
+            {
+                AddSemanticError(instr.Start.Line, instr.Start.Column,
+                    $"Error al ejecutar instrucción: {ex.Message}");
+            }
+        }
+    }
+
     return Value.FromNil();
 }
 
@@ -118,4 +132,5 @@ public override Value VisitProgram([NotNull] ProgramContext context)
             _ => val.Data?.ToString() ?? "null",
         };
     }
+
 }
