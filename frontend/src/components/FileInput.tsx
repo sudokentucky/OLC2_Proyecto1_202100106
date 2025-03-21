@@ -1,14 +1,14 @@
 import React from 'react';
 
 interface FileInputProps {
-    onFileSelect: (file: File) => void; // Función que manejará el archivo seleccionado
+    onFileSelect: (file: File) => void; 
   }
   
   const FileInput: React.FC<FileInputProps> = ({ onFileSelect }) => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]; // Tomamos el primer archivo seleccionado
     if (file) {
-      onFileSelect(file); // Llamamos a la función de selección de archivo
+      onFileSelect(file); 
     }
   };
 
