@@ -77,26 +77,23 @@ public class SymbolTable
         return functions.ContainsKey(name);
     }
     public void AddStruct(StructType structType)
-    {
-        if (structs.ContainsKey(structType.Name))
-            throw new Exception($"El struct '{structType.Name}' ya está definido");
+{
+    if (structs.ContainsKey(structType.Name))
+        throw new Exception($"El struct '{structType.Name}' ya está definido");
+    structs.Add(structType.Name, structType);
 
-        if (structType.Fields.Count == 0)
-            throw new Exception($"El struct '{structType.Name}' no puede estar vacío");
+    entries.Add(new SymbolTableEntry(
+        id: structType.Name,
+        symbolType: "Struct",
+        dataType: "struct",
+        scope: "Global",
+        value: structType,
+        line: 0,
+        column: 0,
+        isStructDef: true
+    ));
+}
 
-        structs.Add(structType.Name, structType);
-        
-        entries.Add(new SymbolTableEntry(
-            id: structType.Name,
-            symbolType: "Struct",
-            dataType: "struct",
-            scope: "Global",
-            value: structType,
-            line: 0,
-            column: 0,
-            isStructDef: true
-        ));
-    }
 
     public StructType GetStruct(string name)
     {
