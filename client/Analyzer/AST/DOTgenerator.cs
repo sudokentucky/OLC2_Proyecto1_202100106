@@ -27,6 +27,14 @@ public class DotGenerator
 
     private string Escape(string text)
     {
-        return text.Replace("\"", "\\\"");  // Escapar comillas dobles
+        if (string.IsNullOrEmpty(text))
+            return "";
+        text = text.Replace("\\", "\\\\");
+        text = text.Replace("\"", "\\\"");
+        text = text.Replace("\n", "\\n");
+        text = text.Replace("\r", "\\r");
+        text = text.Replace("\t", "\\t");
+
+        return text;
     }
 }

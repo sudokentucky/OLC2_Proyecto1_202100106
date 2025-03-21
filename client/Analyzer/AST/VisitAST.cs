@@ -51,7 +51,7 @@ public override AstNode VisitSwitchStmt([NotNull] gramaticaParser.SwitchStmtCont
     // Agregar expresión del switch
     if (context.expresion() != null)
     {
-        var condNode = new AstNode("Condition");
+        var condNode = new AstNode("Condicion del Switch");
         condNode.AddChild(Visit(context.expresion()));
         switchNode.AddChild(condNode);
     }
@@ -78,13 +78,13 @@ public override AstNode VisitCaseStmt([NotNull] gramaticaParser.CaseStmtContext 
     // Agregar expresión del case
     if (context.expresion() != null)
     {
-        var exprNode = new AstNode("CaseValue");
+        var exprNode = new AstNode("Valor de Case");
         exprNode.AddChild(Visit(context.expresion()));
         caseNode.AddChild(exprNode);
     }
     
     // Agregar instrucciones del case
-    var bodyNode = new AstNode("CaseBody");
+    var bodyNode = new AstNode("Cuerpo de Case");
     foreach (var instr in context.instruction())
     {
         bodyNode.AddChild(Visit(instr));
@@ -99,7 +99,7 @@ public override AstNode VisitDefaultStmt([NotNull] gramaticaParser.DefaultStmtCo
     var defaultNode = new AstNode("Default");
     
     // Agregar instrucciones del default
-    var bodyNode = new AstNode("DefaultBody");
+    var bodyNode = new AstNode("Cuerpo de Default");
     foreach (var instr in context.instruction())
     {
         bodyNode.AddChild(Visit(instr));
@@ -111,7 +111,7 @@ public override AstNode VisitDefaultStmt([NotNull] gramaticaParser.DefaultStmtCo
 public override AstNode VisitFieldValue([NotNull] gramaticaParser.FieldValueContext context)
 {
     string fieldName = context.IDENTIFIER().GetText();
-    var fieldNode = new AstNode($"Field\\n{fieldName}");
+    var fieldNode = new AstNode($"Campo\\n{fieldName}");
     
     // Agregar valor del campo
     fieldNode.AddChild(Visit(context.expresion()));
@@ -122,7 +122,7 @@ public override AstNode VisitFieldValue([NotNull] gramaticaParser.FieldValueCont
 public override AstNode VisitStructDecl([NotNull] gramaticaParser.StructDeclContext context)
 {
     string structName = context.IDENTIFIER().GetText();
-    var structNode = new AstNode($"StructDecl\\n{structName}");
+    var structNode = new AstNode($"DeclaracionStruct:\\n{structName}");
     
     // Visitar cada campo del struct
     foreach (var field in context.fieldDecl())
@@ -140,7 +140,7 @@ public override AstNode VisitSliceType([NotNull] gramaticaParser.SliceTypeContex
         elementType = context.typeSpec().GetText();
     }
     
-    return new AstNode($"SliceType\\n[]({elementType})");
+    return new AstNode($"TipoSlice\\n[]({elementType})");
 }
 
 public override AstNode VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralContext context)
@@ -160,7 +160,7 @@ public override AstNode VisitFieldDecl([NotNull] gramaticaParser.FieldDeclContex
     string fieldName = context.IDENTIFIER().GetText();
     string fieldType = context.typeSpec().GetText();
     
-    return new AstNode($"Field\\n{fieldName}: {fieldType}");
+    return new AstNode($"Campo\\n{fieldName}: {fieldType}");
 }
 
 public override AstNode VisitFuncDecl([NotNull] gramaticaParser.FuncDeclContext context)
@@ -185,7 +185,7 @@ public override AstNode VisitFuncDecl([NotNull] gramaticaParser.FuncDeclContext 
     // Crear nodo para la función
     string label = isMethod ? 
         $"Method\\n{funcName}\\nfor {structType}" : 
-        $"Function\\n{funcName}";
+        $"Funcion\\n{funcName}";
     
     var funcNode = new AstNode(label);
     
@@ -200,7 +200,7 @@ public override AstNode VisitFuncDecl([NotNull] gramaticaParser.FuncDeclContext 
     if (context.typeSpec() != null)
     {
         string returnType = context.typeSpec().GetText();
-        funcNode.AddChild(new AstNode($"Return Type\\n{returnType}"));
+        funcNode.AddChild(new AstNode($"Tipo de Return\\n{returnType}"));
     }
     
     // Agregar cuerpo de la función
@@ -212,7 +212,7 @@ public override AstNode VisitFuncDecl([NotNull] gramaticaParser.FuncDeclContext 
 
 public override AstNode VisitParamsList([NotNull] gramaticaParser.ParamsListContext context)
 {
-    var paramsNode = new AstNode("Parameters");
+    var paramsNode = new AstNode("Parametros");
     
     foreach (var param in context.param())
     {
@@ -227,12 +227,12 @@ public override AstNode VisitParam([NotNull] gramaticaParser.ParamContext contex
     string paramName = context.IDENTIFIER().GetText();
     string paramType = context.typeSpec().GetText();
     
-    return new AstNode($"Param\\n{paramName}: {paramType}");
+    return new AstNode($"Parametro\\n{paramName}: {paramType}");
 }
 
 public override AstNode VisitBloque([NotNull] gramaticaParser.BloqueContext context)
 {
-    var bloqueNode = new AstNode("Block");
+    var bloqueNode = new AstNode("Bloque");
     
     foreach (var instr in context.instruction())
     {
@@ -244,18 +244,15 @@ public override AstNode VisitBloque([NotNull] gramaticaParser.BloqueContext cont
 
 public override AstNode VisitInstruction([NotNull] gramaticaParser.InstructionContext context)
 {
-    // Declaraciones y asignaciones
     if (context.declaracion() != null)
         return Visit(context.declaracion());
 
     if (context.assignacion() != null)
         return Visit(context.assignacion());
 
-    // Expresiones y llamadas
     if (context.exprStmt() != null)
         return Visit(context.exprStmt());
 
-    // Estructuras de control
     if (context.printStmt() != null)
         return Visit(context.printStmt());
 
@@ -268,7 +265,6 @@ public override AstNode VisitInstruction([NotNull] gramaticaParser.InstructionCo
     if (context.switchStmt() != null)
         return Visit(context.switchStmt());
 
-    // Instrucciones de ruptura de flujo
     if (context.breakStmt() != null)
         return Visit(context.breakStmt());
 
@@ -278,29 +274,59 @@ public override AstNode VisitInstruction([NotNull] gramaticaParser.InstructionCo
     if (context.returnStmt() != null)
         return Visit(context.returnStmt());
     
-    // Soporte para incremento/decremento si existe en tu gramática
     if (context.incDecStmt() != null)
         return Visit(context.incDecStmt());
 
-
-    // Para cualquier otra instrucción no identificada
-    return new AstNode($"Unknown Instruction\\n{context.GetText()}");
+    return new AstNode($"Instruccion Desconocida\\n{context.GetText()}");
 }
 
 public override AstNode VisitPrintStmt([NotNull] gramaticaParser.PrintStmtContext context)
 {
     var printNode = new AstNode("fmt.Println");
-    
-    // Visitar los argumentos (expresiones a imprimir) revisando los hijos para identificar expresiones
-    foreach (var child in context.children)
+
+    var argsNode = new AstNode("Arumentos");
+
+    if (context.argumentList() != null)
     {
-        if (child is gramaticaParser.ExpresionContext exp)
+        foreach (var expr in context.argumentList().expresion())
         {
-            printNode.AddChild(Visit(exp));
+            argsNode.AddChild(Visit(expr));
         }
     }
-    
+
+    if (argsNode.Children.Count > 0)
+    {
+        printNode.AddChild(argsNode);
+    }
+
     return printNode;
+}
+
+public override AstNode VisitConversionFunc([NotNull] gramaticaParser.ConversionFuncContext context)
+{
+    string functionName = "";
+    
+    if (context.STRCONV() != null && context.ATOI() != null)
+    {
+        functionName = "strconv.Atoi";
+    }
+    else if (context.STRCONV() != null && context.PARSERFLOAT() != null)
+    {
+        functionName = "strconv.ParseFloat";
+    }
+    else if (context.REFLECT() != null && context.TYPEOF() != null)
+    {
+        functionName = "reflect.TypeOf";
+    }
+    
+    var conversionNode = new AstNode($"Conversion\\n{functionName}");
+    
+    if (context.expresion() != null)
+    {
+        conversionNode.AddChild(Visit(context.expresion()));
+    }
+    
+    return conversionNode;
 }
 
 public override AstNode VisitBreakStmt([NotNull] gramaticaParser.BreakStmtContext context)
@@ -317,7 +343,6 @@ public override AstNode VisitReturnStmt([NotNull] gramaticaParser.ReturnStmtCont
 {
     var returnNode = new AstNode("Return");
     
-    // Visitar valor de retorno si existe
     if (context.expresion() != null)
     {
         returnNode.AddChild(Visit(context.expresion()));
@@ -328,25 +353,25 @@ public override AstNode VisitReturnStmt([NotNull] gramaticaParser.ReturnStmtCont
 
 public override AstNode VisitDeclaracion([NotNull] gramaticaParser.DeclaracionContext context)
 {
-    var declaracionNode = new AstNode("Declaration");
+    var declaracionNode = new AstNode("Declaracion");
     
     // Manejar var o declaración con tipo
     if (context.VAR() != null)
     {
         string varName = context.IDENTIFIER(0).GetText();
-        declaracionNode.AddChild(new AstNode($"Var\\n{varName}"));
+        declaracionNode.AddChild(new AstNode($"NombreVariable\\n{varName}"));
     }
     else if (context.IDENTIFIER().Length >= 2)
     {
         string typeName = context.IDENTIFIER(0).GetText();
         string varName = context.IDENTIFIER(1).GetText();
-        declaracionNode.AddChild(new AstNode($"TypedVar\\n{varName}: {typeName}"));
+        declaracionNode.AddChild(new AstNode($"TipoVariable\\n{varName}: {typeName}"));
     }
     
     // Valor inicial si existe
     if (context.expresion() != null)
     {
-        declaracionNode.AddChild(new AstNode("InitValue"));
+        declaracionNode.AddChild(new AstNode("ValorInicial"));
         declaracionNode.Children.Last().AddChild(Visit(context.expresion()));
     }
     
@@ -355,9 +380,8 @@ public override AstNode VisitDeclaracion([NotNull] gramaticaParser.DeclaracionCo
 
 public override AstNode VisitAssignacion([NotNull] gramaticaParser.AssignacionContext context)
 {
-    var assignNode = new AstNode("Assignment");
+    var assignNode = new AstNode("Asignacion");
     
-    // Lado izquierdo (puede ser variable simple o acceso a campo/índice)
     string leftSide = "";
     for (int i = 0; i < context.IDENTIFIER().Length; i++)
     {
@@ -366,14 +390,11 @@ public override AstNode VisitAssignacion([NotNull] gramaticaParser.AssignacionCo
             leftSide += ".";
     }
     
-    // Acceso a índices si existen (not supported in AssignacionContext)
+    assignNode.AddChild(new AstNode($"Asigno A:\\n{leftSide}"));
     
-    assignNode.AddChild(new AstNode($"Target\\n{leftSide}"));
-    
-    // Lado derecho (expresión)
     if (context.expresion() != null)
     {
-        assignNode.AddChild(new AstNode("Value"));
+        assignNode.AddChild(new AstNode("Valor"));
         assignNode.Children.Last().AddChild(Visit(context.expresion(0)));
     }
     
@@ -382,7 +403,7 @@ public override AstNode VisitAssignacion([NotNull] gramaticaParser.AssignacionCo
 
 public override AstNode VisitExprStmt([NotNull] gramaticaParser.ExprStmtContext context)
 {
-    var node = new AstNode("ExpressionStatement");
+    var node = new AstNode("Expresion");
     node.AddChild(Visit(context.expresion()));
     return node;
 }
@@ -394,7 +415,7 @@ public override AstNode VisitExpresion([NotNull] gramaticaParser.ExpresionContex
         (context.GetChild(0).GetText() == "-" || context.GetChild(0).GetText() == "!"))
     {
         string op = context.GetChild(0).GetText();
-        var unaryNode = new AstNode($"UnaryOp\\n{op}");
+        var unaryNode = new AstNode($"Unario\\n{op}");
         unaryNode.AddChild(Visit(context.GetChild(1)));
         return unaryNode;
     }
@@ -405,7 +426,7 @@ public override AstNode VisitExpresion([NotNull] gramaticaParser.ExpresionContex
         context.GetChild(2) is gramaticaParser.ExpresionContext)
     {
         string op = context.GetChild(1).GetText();
-        var binaryNode = new AstNode($"BinaryOp\\n{op}");
+        var binaryNode = new AstNode($"OperadorBinario\\n{op}");
         binaryNode.AddChild(Visit(context.GetChild(0)));
         binaryNode.AddChild(Visit(context.GetChild(2)));
         return binaryNode;
@@ -416,7 +437,7 @@ public override AstNode VisitExpresion([NotNull] gramaticaParser.ExpresionContex
         context.GetChild(0).GetText() == "(" && 
         context.GetChild(context.ChildCount - 1).GetText() == ")")
     {
-        var parenNode = new AstNode("Parenthesis");
+        var parenNode = new AstNode("Parentesis");
         // Visitar el contenido dentro de los paréntesis
         parenNode.AddChild(Visit(context.GetChild(1)));
         return parenNode;
@@ -438,29 +459,25 @@ public override AstNode VisitExpresion([NotNull] gramaticaParser.ExpresionContex
     }
     
     // Fallback: Crear un nodo genérico que muestre el texto de la expresión
-    return new AstNode($"Expression\\n{context.GetText()}");
+    return new AstNode($"Expresion\\n{context.GetText()}");
 }
 
 public override AstNode VisitIfStmt([NotNull] gramaticaParser.IfStmtContext context)
 {
-    var ifNode = new AstNode("IfStatement");
+    var ifNode = new AstNode("if");
     
-    // Condición
-    var condNode = new AstNode("Condition");
+    var condNode = new AstNode("Condicion");
     condNode.AddChild(Visit(context.expresion()));
     ifNode.AddChild(condNode);
     
-    // Bloque then - en ANTLR generalmente hay un acceso directo al bloque 'then'
-    var thenNode = new AstNode("Then");
+    var thenNode = new AstNode("Entonces");
     
-    // Verificar qué patrón usa la gramática para definir el bloque then
     if (context.GetChild(2) is gramaticaParser.BloqueContext)
     {
         thenNode.AddChild(Visit(context.GetChild(2)));
     }
     else
     {
-        // Si se estructura diferente, podemos buscar el bloque
         for (int i = 0; i < context.ChildCount; i++) 
         {
             if (context.GetChild(i) is gramaticaParser.BloqueContext)
@@ -472,18 +489,13 @@ public override AstNode VisitIfStmt([NotNull] gramaticaParser.IfStmtContext cont
     }
     
     ifNode.AddChild(thenNode);
-    
-    // Bloque else - verificar si hay un bloque 'else'
-    bool hasElse = false;
-    
-    // Buscar la palabra clave 'else' en los hijos
-    for (int i = 0; i < context.ChildCount; i++) 
+        bool hasElse = false;
+        for (int i = 0; i < context.ChildCount; i++) 
     {
         if (context.GetChild(i).GetText() == "else") 
         {
             hasElse = true;
             
-            // El bloque else debería estar después de la palabra 'else'
             if (i + 1 < context.ChildCount && 
                 context.GetChild(i + 1) is gramaticaParser.BloqueContext) 
             {
@@ -501,21 +513,19 @@ public override AstNode VisitIfStmt([NotNull] gramaticaParser.IfStmtContext cont
 
 public override AstNode VisitForStmt([NotNull] gramaticaParser.ForStmtContext context)
 {
-    var forNode = new AstNode("ForLoop");
+    var forNode = new AstNode("For");
     
-    // Buscar la expresión de condición (si existe)
     for (int i = 0; i < context.ChildCount; i++)
     {
         if (context.GetChild(i) is gramaticaParser.ExpresionContext)
         {
-            var condNode = new AstNode("Condition");
+            var condNode = new AstNode("Condicion");
             condNode.AddChild(Visit(context.GetChild(i)));
             forNode.AddChild(condNode);
             break;
         }
     }
     
-    // Buscar el bloque del cuerpo del for
     for (int i = 0; i < context.ChildCount; i++)
     {
         if (context.GetChild(i) is gramaticaParser.BloqueContext)
@@ -530,29 +540,30 @@ public override AstNode VisitForStmt([NotNull] gramaticaParser.ForStmtContext co
 
 public override AstNode VisitPrimary([NotNull] gramaticaParser.PrimaryContext context)
 {
-    // IDENTIFIER
+    
     if (context.IDENTIFIER() != null && context.IDENTIFIER().Length > 0)
-        return new AstNode($"Identifier\\n{context.IDENTIFIER(0).GetText()}");
+        return new AstNode($"Identificador\\n{context.IDENTIFIER(0).GetText()}");
 
-    // INT_LIT
     if (context.INT_LIT() != null)
-        return new AstNode($"IntLiteral\\n{context.INT_LIT().GetText()}");
+        return new AstNode($"Entero\\n{context.INT_LIT().GetText()}");
 
-    // STRING_LIT
+    if (context.FLOAT_LIT() != null)
+        return new AstNode($"Flotante\\n{context.FLOAT_LIT().GetText()}");
+
     if (context.STRING_LIT() != null)
-        return new AstNode($"StringLiteral\\n{context.STRING_LIT().GetText()}");
+        return new AstNode($"String\\n{context.STRING_LIT().GetText()}");
 
-    // EXPRESION
+    if (context.RUNE_LIT() != null)
+        return new AstNode($"Rune\\n{context.RUNE_LIT().GetText()}");
+
     if (context.expresion() != null && context.expresion().Length > 0)
         return Visit(context.expresion(0));
 
-    // FUNCTCALL
     if (context.functCall() != null)
         return Visit(context.functCall());
 
-    // NIL
     if (context.NIL() != null)
-        return new AstNode("NilLiteral");
+        return new AstNode("NULO");
 
     return new AstNode($"Unknown Primary -> {context.GetText()}");
 }
@@ -562,13 +573,11 @@ public override AstNode VisitFunctCall([NotNull] gramaticaParser.FunctCallContex
 {
     string funcName = "";
     
-    // Obtener el nombre de la función del primer hijo que no sea un paréntesis
     for (int i = 0; i < context.ChildCount; i++)
     {
         string childText = context.GetChild(i).GetText();
         if (childText != "(" && childText != ")")
         {
-            // Si es una llamada a una función integrada (como fmt.Println)
             if (childText.Contains("."))
             {
                 funcName = childText.Split('(')[0];
@@ -583,11 +592,10 @@ public override AstNode VisitFunctCall([NotNull] gramaticaParser.FunctCallContex
         }
     }
     
-    var funcCallNode = new AstNode($"FunctionCall\\n{funcName}");
+    var funcCallNode = new AstNode($"LlamadaFuncion\\n{funcName}");
     
-    // Buscar argumentos entre paréntesis - enfoque genérico sin depender del nombre ExprListContext
     bool inArgs = false;
-    var argsNode = new AstNode("Arguments");
+    var argsNode = new AstNode("Parametros");
     
     for (int i = 0; i < context.ChildCount; i++)
     {
@@ -605,30 +613,23 @@ public override AstNode VisitFunctCall([NotNull] gramaticaParser.FunctCallContex
             continue;
         }
         
-        // Si estamos dentro de los paréntesis, procesamos los argumentos
         if (inArgs)
         {
-            // Si es una expresión directa, la visitamos
             if (child is gramaticaParser.ExpresionContext)
             {
                 argsNode.AddChild(Visit(child));
             }
-            // Si no es una expresión, podría ser un contenedor de expresiones
-            // (sin importar cómo se llame exactamente en la gramática)
             else
             {
-                // Recorrer los hijos buscando expresiones
                 for (int j = 0; j < child.ChildCount; j++)
                 {
                     var grandchild = child.GetChild(j);
                     
-                    // Si es una expresión la agregamos
                     if (grandchild is gramaticaParser.ExpresionContext)
                     {
                         argsNode.AddChild(Visit(grandchild));
                     }
-                    // También revisar si hay separadores entre expresiones (como comas)
-                    // y continuar buscando expresiones
+
                 }
             }
         }
