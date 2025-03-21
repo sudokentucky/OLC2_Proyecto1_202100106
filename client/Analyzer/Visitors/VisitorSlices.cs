@@ -22,7 +22,6 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
     int line = context.Start.Line;
     int col = context.Start.Column;
 
-    // Obtener el tipo declarado (si existe)
     Slice declaredSlice = null;
     if (context.sliceType() != null)
     {
@@ -39,7 +38,6 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
         elements.Add(element);
     }
 
-    // Determinar el tipo de elementos según los valores visitados
     ValueType elementType = ValueType.Nil;
     ValueType nestedType = ValueType.Nil;
 
@@ -85,8 +83,7 @@ public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralCo
         }
     }
 
-    // Crear el slice final
-    Slice newSlice = elementType == ValueType.Slice
+    Slice newSlice = elementType == ValueType.Slice //creo mi slice
         ? new Slice(ValueType.Slice, nestedType)
         : new Slice(elementType);
 
@@ -180,7 +177,6 @@ private Value EvaluateAppend(Value[] exprs, int line, int col)
     {
         Value elem = exprs[i];
 
-        // Si es un slice multidimensional, validar nested type
         if (slice.ElementType == ValueType.Slice)
         {
             if (elem.Type != ValueType.Slice)
