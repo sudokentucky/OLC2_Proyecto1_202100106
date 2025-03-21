@@ -5,24 +5,181 @@ using static gramaticaParser;
 
 public partial class Visitor
 {
-    public override Value VisitAssignacion([NotNull] AssignacionContext context)
+public override Value VisitAssignacion([NotNull] AssignacionContext context)
+{
+    int line = context.Start.Line;
+    int column = context.Start.Column;
+
+    string targetIdentifier = context.IDENTIFIER(0).GetText();
+
+    // ✅ Ahora se captura correctamente el operador
+    string assignmentOperator;
+
+    if (context.ASIGNACION() != null)
     {
-        int line = context.Start.Line;
-        int column = context.Start.Column;
+        assignmentOperator = context.ASIGNACION().GetText();
+    }
+    else if (context.ASIGNACIO_INCREMENTO() != null)
+    {
+        assignmentOperator = context.ASIGNACIO_INCREMENTO().GetText();
+    }
+    else if (context.ASIGNACIO_DECREMENTO() != null)
+    {
+        assignmentOperator = context.ASIGNACIO_DECREMENTO().GetText();
+    }
+    else
+    {
+        AddSemanticError(line, column, "Operador de asignación no reconocido.");
+        return Value.FromNil();
+    }
 
-        string targetIdentifier = context.IDENTIFIER(0).GetText();
-        string assignmentOperator = context.GetChild(1).GetText();
-        bool isDeclaration = assignmentOperator == ":=";
+    int exprCount = context.expresion().Length;
+    Value rightValue = Visit(context.expresion(exprCount - 1));
 
-        Value rightValue = Visit(context.expresion());
+    // Índices del slice (opcional)
+    var indices = new List<Value>();
+    for (int i = 0; i < context.CORCHETE_IZQ().Length; i++)
+    {
+        indices.Add(Visit(context.expresion(i)));
+    }
 
-        if (IsStructFieldAssignment(targetIdentifier))
+    // Cadena de campos (opcional)
+    var fieldChain = new List<string>();
+    int idCount = context.IDENTIFIER().Length;
+    for (int i = 1; i < idCount; i++)
+    {
+        fieldChain.Add(context.IDENTIFIER(i).GetText());
+    }
+
+    return HandleAssignment(targetIdentifier, indices, fieldChain, rightValue, assignmentOperator, line, column);
+}
+
+private Value HandleAssignment(
+    string identifier,
+    List<Value> indices,
+    List<string> fieldChain,
+    Value rightValue,
+    string op,
+    int line,
+    int column)
+{
+    try
+    {
+        Value current = currentEnv.GetVariable(identifier);
+
+        // Caso: acceso a slices con índices
+        if (indices.Count > 0)
         {
-            return HandleStructFieldAssignment(targetIdentifier, rightValue, line, column);
+            return HandleSliceIndexAssignment(current, indices, fieldChain, rightValue, op, line, column);
         }
 
-        return HandleVariableAssignment(targetIdentifier, rightValue, assignmentOperator, isDeclaration, line, column);
+        // Caso: acceso a campos (struct)
+        if (fieldChain.Count > 0)
+        {
+            return HandleStructFieldAssignment(current.AsStruct(), fieldChain, rightValue, line, column);
+        }
+
+        // Asignación simple a variable
+        Value result = ApplyAssignmentOperator(current, rightValue, op, line, column);
+        currentEnv.SetVariable(identifier, result);
+        return result;
     }
+    catch (Exception ex)
+    {
+        AddSemanticError(line, column, ex.Message);
+        return Value.FromNil();
+    }
+}
+private Value HandleSliceIndexAssignment(
+    Value currentValue,
+    List<Value> indices,
+    List<string> fieldChain,
+    Value rightValue,
+    string op,
+    int line,
+    int column)
+{
+    // Navegamos el slice
+    Slice currentSlice = currentValue.AsSlice();
+
+    for (int i = 0; i < indices.Count - 1; i++)
+    {
+        int index = indices[i].AsInt();
+        Value innerValue = SliceOperations.GetElement(currentSlice, index);
+
+        if (innerValue.Type != ValueType.Slice)
+        {
+            AddSemanticError(line, column, $"El valor en el índice {index} no es un slice.");
+            return Value.FromNil();
+        }
+
+        currentSlice = innerValue.AsSlice();
+    }
+
+    int lastIndex = indices[^1].AsInt();
+
+    if (fieldChain.Count > 0)
+    {
+        // Accedemos al struct dentro del slice
+        Value targetElement = SliceOperations.GetElement(currentSlice, lastIndex);
+
+        if (targetElement.Type != ValueType.Struct)
+        {
+            AddSemanticError(line, column, $"El valor en el índice {lastIndex} no es un struct para acceder a campos.");
+            return Value.FromNil();
+        }
+
+        return HandleStructFieldAssignment(targetElement.AsStruct(), fieldChain, rightValue, line, column);
+    }
+
+    // Asignación directa al elemento del slice
+    Value oldValue = SliceOperations.GetElement(currentSlice, lastIndex);
+    Value result = ApplyAssignmentOperator(oldValue, rightValue, op, line, column);
+    SliceOperations.SetElement(currentSlice, lastIndex, result);
+    return result;
+}
+private Value ApplyAssignmentOperator(Value currentValue, Value rightValue, string op, int line, int column)
+{
+    return op switch
+    {
+        "=" => rightValue,
+        "+=" => ApplyPlusAssign(currentValue, rightValue, line, column),
+        "-=" => ApplyMinusAssign(currentValue, rightValue, line, column),
+        _ => HandleUnknownOperator(op, currentValue, line, column)
+    };
+}
+
+private Value HandleStructFieldAssignment(StructInstance structInstance, List<string> fieldChain, Value rightValue, int line, int column)
+{
+    for (int i = 0; i < fieldChain.Count - 1; i++)
+    {
+        string field = fieldChain[i];
+        Value nested = structInstance.GetField(field);
+
+        if (nested.Type != ValueType.Struct)
+        {
+            AddSemanticError(line, column, $"El campo {field} no es un struct.");
+            return Value.FromNil();
+        }
+
+        structInstance = nested.AsStruct();
+    }
+
+    string finalField = fieldChain[^1];
+
+    try
+    {
+        structInstance.SetField(finalField, rightValue);
+        return rightValue;
+    }
+    catch (Exception ex)
+    {
+        AddSemanticError(line, column, ex.Message);
+        return Value.FromNil();
+    }
+}
+
+
 
     private bool IsStructFieldAssignment(string identifier)
     {
@@ -98,23 +255,7 @@ public partial class Visitor
         }
     }
 
-    private Value HandleVariableAssignment(string identifier, Value rightValue, string op, bool isDeclaration, int line, int column)
-    {
-        if (isDeclaration)
-        {
-            return DeclareVariable(identifier, rightValue, line, column);
-        }
-
-        return AssignVariable(identifier, rightValue, op, line, column);
-    }
-
-    private Value DeclareVariable(string identifier, Value rightValue, int line, int column)
-    {
-        currentEnv.DeclareVariable(identifier, rightValue, line, column);
-        return rightValue;
-    }
-
-    private Value AssignVariable(string identifier, Value rightValue, string op, int line, int column)
+    private Value HandleVariableAssignment(string identifier, Value rightValue, string op, int line, int column)
     {
         try
         {
