@@ -24,7 +24,7 @@ public partial class Visitor
             {
                 AddSemanticError(ctx.Start.Line, ctx.Start.Column,
                     $"El argumento {i + 1} es nulo.");
-                results[i] = new Value(ValueType.Nil, null); // o manejar el caso
+                results[i] = new Value(ValueType.Nil, null); 
             }
         }
         return results;
@@ -121,7 +121,6 @@ public partial class Visitor
                 {
                     caseMatched = true;
 
-                    // Si este case tiene instrucciones
                     if (caseStmt.instruction().Length > 0)
                     {
                         executeNext = false;
