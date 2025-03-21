@@ -64,6 +64,7 @@ const DotGraph: React.FC = () => {
         Descargar como PNG
       </button>
     </div>
+    
   );
 };
 
