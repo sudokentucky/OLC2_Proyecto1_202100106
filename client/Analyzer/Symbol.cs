@@ -32,7 +32,12 @@ public class Value
     public string AsString() => (string)Data;
     public char AsRune() => (char)Data;
     public Slice AsSlice() => (Slice)Data;
-    public StructInstance AsStruct() => (StructInstance)Data;
+    public StructInstance AsStruct()
+{
+    if (Type == ValueType.Nil)
+        return null;
+    return (StructInstance)Data;
+}
 
     public static Value FromInt(int i)       => new Value(ValueType.Int, i);
     public static Value FromFloat(double d)  => new Value(ValueType.Float, d);
@@ -71,8 +76,8 @@ public class Value
             ValueType.Int    => AsInt().ToString(),
             ValueType.Float  => AsFloat().ToString("0.0#"),
             ValueType.Bool   => AsBool() ? "true" : "false",
-            ValueType.String => $"\"{AsString()}\"",
-            ValueType.Rune   => $"'{AsRune()}'",
+            ValueType.String => $"{AsString()}",
+            ValueType.Rune   => $"{AsRune()}",
             ValueType.Slice  => AsSlice()?.ToString() ?? "[]",
             ValueType.Struct => AsStruct()?.ToString() ?? "nil",
             ValueType.Nil    => "nil",
