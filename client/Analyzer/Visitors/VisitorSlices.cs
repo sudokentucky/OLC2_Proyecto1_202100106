@@ -1,252 +1,259 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Antlr4.Runtime.Misc;
 using static gramaticaParser;
-public partial class Visitor{
 
-public override Value VisitSliceType(gramaticaParser.SliceTypeContext context)
+public partial class Visitor
 {
-    Value subTypeVal = Visit(context.typeSpec());
-
-    if (subTypeVal.Type == ValueType.Slice)
+    public override Value VisitSliceType(SliceTypeContext context)
     {
-        Slice innerSlice = (Slice)subTypeVal.Data;
-        return new Value(ValueType.Slice, new Slice(ValueType.Slice, innerSlice.NestedValueType));
-    }
+        Value subtypeValue = Visit(context.typeSpec());
 
-    return new Value(ValueType.Slice, new Slice(subTypeVal.Type));
-}
-
-
-public override Value VisitSliceLiteral([NotNull] gramaticaParser.SliceLiteralContext context)
-{
-    int line = context.Start.Line;
-    int col = context.Start.Column;
-
-    Slice declaredSlice = null;
-    if (context.sliceType() != null)
-    {
-        declaredSlice = Visit(context.sliceType()).AsSlice();
-    }
-
-    var exprOrSliceList = context.expresionOrSliceLiteral();
-    List<Value> elements = new List<Value>();
-
-    // Recolectar los elementos
-    foreach (var node in exprOrSliceList)
-    {
-        Value element = Visit(node);
-        elements.Add(element);
-    }
-
-    ValueType elementType = ValueType.Nil;
-    ValueType nestedType = ValueType.Nil;
-
-    if (declaredSlice != null)
-    {
-        elementType = declaredSlice.ElementType;
-        nestedType = declaredSlice.NestedValueType;
-    }
-    else if (elements.Count > 0)
-    {
-        if (elements[0].Type == ValueType.Slice)
+        if (subtypeValue.Type == ValueType.Slice)
         {
-            elementType = ValueType.Slice;
-            nestedType = elements[0].AsSlice().NestedValueType;
+            Slice innerSlice = subtypeValue.AsSlice();
+            return Value.FromSlice(new Slice(ValueType.Slice, innerSlice.NestedValueType));
         }
-        else
-        {
-            elementType = elements[0].Type;
-        }
+
+        return Value.FromSlice(new Slice(subtypeValue.Type));
     }
 
-    // Validar tipos de elementos
-    foreach (var elem in elements)
+    public override Value VisitSliceLiteral([NotNull] SliceLiteralContext context)
     {
-        if (elementType == ValueType.Slice)
+        int line = context.Start.Line;
+        int column = context.Start.Column;
+
+        Slice declaredSlice = GetDeclaredSlice(context);
+        List<Value> elements = GetElementsFromContext(context);
+
+        (ValueType elementType, ValueType nestedType) = DetermineElementTypes(declaredSlice, elements);
+        ValidateElementsTypes(elements, elementType, nestedType, line, column);
+
+        Slice resultSlice = CreateSlice(elementType, nestedType, elements);
+        return Value.FromSlice(resultSlice);
+    }
+
+    private Slice GetDeclaredSlice(SliceLiteralContext context)
+    {
+        return context.sliceType() != null
+            ? Visit(context.sliceType()).AsSlice()
+            : null;
+    }
+
+    private List<Value> GetElementsFromContext(SliceLiteralContext context)
+    {
+        return context.expresionOrSliceLiteral()
+                      .Select(Visit)
+                      .ToList();
+    }
+
+    private (ValueType elementType, ValueType nestedType) DetermineElementTypes(Slice declaredSlice, List<Value> elements)
+    {
+        if (declaredSlice != null)
+            return (declaredSlice.ElementType, declaredSlice.NestedValueType);
+
+        if (elements.Count == 0)
+            return (ValueType.Nil, ValueType.Nil);
+
+        Value firstElement = elements[0];
+
+        if (firstElement.Type == ValueType.Slice)
         {
-            if (elem.Type != ValueType.Slice)
-            {
-                AddSemanticError(line, col, $"Se esperaba un slice en un slice multidimensional. Se encontró: {elem.Type}");
-            }
+            Slice innerSlice = firstElement.AsSlice();
+            return (ValueType.Slice, innerSlice.NestedValueType);
+        }
+
+        return (firstElement.Type, ValueType.Nil);
+    }
+
+    private void ValidateElementsTypes(List<Value> elements, ValueType elementType, ValueType nestedType, int line, int column)
+    {
+        foreach (var element in elements)
+        {
+            if (elementType == ValueType.Slice)
+                ValidateNestedSlice(element, nestedType, line, column);
             else
-            {
-                Slice innerSlice = elem.AsSlice();
-                if (innerSlice.NestedValueType != nestedType)
-                {
-                    AddSemanticError(line, col, $"Tipo interno no coincide. Esperado: {nestedType}, Encontrado: {innerSlice.NestedValueType}");
-                }
-            }
+                ValidateElementType(element, elementType, line, column);
         }
-        else if (elem.Type != elementType)
+    }
+
+    private void ValidateNestedSlice(Value element, ValueType expectedNestedType, int line, int column)
+    {
+        if (element.Type != ValueType.Slice)
         {
-            AddSemanticError(line, col, $"Tipo incompatible. Esperado: {elementType}, Encontrado: {elem.Type}");
+            AddSemanticError(line, column, $"Se esperaba un slice, pero se encontró: {element.Type}");
+            return;
+        }
+
+        Slice innerSlice = element.AsSlice();
+        if (innerSlice.NestedValueType != expectedNestedType)
+        {
+            AddSemanticError(line, column, $"Tipo interno no coincide. Esperado: {expectedNestedType}, Encontrado: {innerSlice.NestedValueType}");
         }
     }
 
-    Slice newSlice = elementType == ValueType.Slice //creo mi slice
-        ? new Slice(ValueType.Slice, nestedType)
-        : new Slice(elementType);
-
-    foreach (var elem in elements)
+    private void ValidateElementType(Value element, ValueType expectedType, int line, int column)
     {
-        newSlice.Append(elem);
+        if (element.Type != expectedType)
+        {
+            AddSemanticError(line, column, $"Tipo incompatible. Esperado: {expectedType}, Encontrado: {element.Type}");
+        }
     }
 
-    return Value.FromSlice(newSlice);
-}
+    private Slice CreateSlice(ValueType elementType, ValueType nestedType, List<Value> elements)
+    {
+        Slice slice = elementType == ValueType.Slice
+            ? new Slice(ValueType.Slice, nestedType)
+            : new Slice(elementType);
 
+        elements.ForEach(slice.Append);
+        return slice;
+    }
 
-private string DescribeSlice(ValueType elementType, ValueType nestedType)
-{
-    if (elementType == ValueType.Slice)
+    public override Value VisitSliceFunc([NotNull] SliceFuncContext context)
     {
-        return $"[]{DescribeSlice(nestedType, ValueType.Nil)}";
-    }
-    return elementType.ToString();
-}
-    public override Value VisitSliceFunc([NotNull] gramaticaParser.SliceFuncContext context)
-{
-    int line = context.Start.Line;
-    int column = context.Start.Column;
-    if (context.LEN() != null)
-    {
-        Value arg = Visit(context.expresion(0)); 
-        return EvaluateLen(arg, line, column);
-    }
-    else if (context.APPEND() != null)
-    {
-        Value[] exprs = context.expresion().Select(e => Visit(e)).ToArray();
-        return EvaluateAppend(exprs, line, column);
-    }
-    else if (context.SLICES() != null && context.INDEX() != null)
-    {
-        Value sliceVal = Visit(context.expresion(0));
-        Value searchVal = Visit(context.expresion(1));
-        return EvaluateSlicesIndex(sliceVal, searchVal, line, column);
-    }
-    else if (context.STRINGS() != null && context.JOIN() != null)
-    {
-        Value sliceVal  = Visit(context.expresion(0));
-        Value sepVal    = Visit(context.expresion(1));
-        return EvaluateStringsJoin(sliceVal, sepVal, line, column);
-    }
-    else
-    {
+        int line = context.Start.Line;
+        int column = context.Start.Column;
+
+        if (context.LEN() != null)
+            return EvaluateLen(Visit(context.expresion(0)), line, column);
+
+        if (context.APPEND() != null)
+            return EvaluateAppend(context.expresion().Select(Visit).ToArray(), line, column);
+
+        if (context.SLICES() != null && context.INDEX() != null)
+            return EvaluateSlicesIndex(Visit(context.expresion(0)), Visit(context.expresion(1)), line, column);
+
+        if (context.STRINGS() != null && context.JOIN() != null)
+            return EvaluateStringsJoin(Visit(context.expresion(0)), Visit(context.expresion(1)), line, column);
+
         AddSemanticError(line, column, "Función de slice desconocida.");
         return Value.FromNil();
     }
-}
-private Value EvaluateLen(Value arg, int line, int col)
-{
-    if (arg.Type == ValueType.Slice)
+
+    private Value EvaluateLen(Value arg, int line, int column)
     {
-        Slice s = arg.AsSlice();
-        int length = SliceOperations.Len(s);
-        return Value.FromInt(length);
+        return arg.Type switch
+        {
+            ValueType.Slice => Value.FromInt(SliceOperations.Len(arg.AsSlice())),
+            ValueType.String => Value.FromInt(arg.AsString().Length),
+            _ => ReportLenTypeError(arg.Type, line, column)
+        };
     }
-    else if (arg.Type == ValueType.String)
+
+    private Value ReportLenTypeError(ValueType type, int line, int column)
     {
-        return Value.FromInt(arg.AsString().Length);
-    }
-    else
-    {
-        AddSemanticError(line, col, $"len() no aplica a tipo {arg.Type}.");
+        AddSemanticError(line, column, $"len() no aplica a tipo {type}.");
         return Value.FromInt(0);
     }
-}
 
-private Value EvaluateAppend(Value[] exprs, int line, int col)
-{
-    if (exprs.Length < 2)
+    private Value EvaluateAppend(Value[] args, int line, int column)
     {
-        AddSemanticError(line, col, "append requiere al menos 2 parámetros: append(slice, item1, ...)");
-        return Value.FromNil();
-    }
-
-    Value sliceVal = exprs[0];
-
-    if (sliceVal.Type != ValueType.Slice)
-    {
-        AddSemanticError(line, col, "append() el primer argumento debe ser un slice.");
-        return Value.FromNil();
-    }
-
-    Slice slice = sliceVal.AsSlice();
-
-    for (int i = 1; i < exprs.Length; i++)
-    {
-        Value elem = exprs[i];
-
-        if (slice.ElementType == ValueType.Slice)
+        if (args.Length < 2)
         {
-            if (elem.Type != ValueType.Slice)
-            {
-                AddSemanticError(line, col, $"No se puede agregar {elem.Type} a un slice de slices.");
-                continue;
-            }
-
-            Slice innerSlice = elem.AsSlice();
-            if (innerSlice.NestedValueType != slice.NestedValueType)
-            {
-                AddSemanticError(line, col, $"Tipos incompatibles en el slice anidado. Se esperaba {slice.NestedValueType}.");
-                continue;
-            }
-
-            slice.Append(elem);
+            AddSemanticError(line, column, "append requiere al menos 2 parámetros: append(slice, item1, ...)");
+            return Value.FromNil();
         }
-        else
+
+        Value sliceValue = args[0];
+        if (sliceValue.Type != ValueType.Slice)
         {
-            if (elem.Type != slice.ElementType)
-            {
-                AddSemanticError(line, col, $"No se puede agregar {elem.Type} a un slice de {slice.ElementType}.");
-                continue;
-            }
-
-            slice.Append(elem);
+            AddSemanticError(line, column, "append() el primer argumento debe ser un slice.");
+            return Value.FromNil();
         }
+
+        return AppendElements(sliceValue.AsSlice(), args.Skip(1), line, column);
     }
 
-    return Value.FromSlice(slice);
-}
-
-
-private Value EvaluateSlicesIndex(Value sliceVal, Value searchVal, int line, int col)
-{
-    if (sliceVal.Type != ValueType.Slice)
+    private Value AppendElements(Slice slice, IEnumerable<Value> elements, int line, int column)
     {
-        AddSemanticError(line, col, "slices.Index() el primer argumento debe ser un slice.");
-        return Value.FromInt(-1);
-    }
-    Slice s = sliceVal.AsSlice();
-    int idx = SliceOperations.Index(s, searchVal);
-    return Value.FromInt(idx);
-}
+        foreach (var element in elements)
+        {
+            if (slice.ElementType == ValueType.Slice)
+            {
+                AppendNestedSlice(slice, element, line, column);
+            }
+            else
+            {
+                AppendSingleElement(slice, element, line, column);
+            }
+        }
 
-private Value EvaluateStringsJoin(Value sliceVal, Value sepVal, int line, int col)
-{
-    if (sliceVal.Type != ValueType.Slice)
+        return Value.FromSlice(slice);
+    }
+
+    private void AppendNestedSlice(Slice slice, Value element, int line, int column)
     {
-        AddSemanticError(line, col, "strings.join() el primer argumento debe ser un slice.");
-        return Value.FromString("");
+        if (element.Type != ValueType.Slice)
+        {
+            AddSemanticError(line, column, $"No se puede agregar {element.Type} a un slice de slices.");
+            return;
+        }
+
+        Slice innerSlice = element.AsSlice();
+        if (innerSlice.NestedValueType != slice.NestedValueType)
+        {
+            AddSemanticError(line, column, $"Tipos incompatibles en el slice anidado. Se esperaba {slice.NestedValueType}.");
+            return;
+        }
+
+        slice.Append(element);
     }
 
-    if (sepVal.Type != ValueType.String)
+    private void AppendSingleElement(Slice slice, Value element, int line, int column)
     {
-        AddSemanticError(line, col, "strings.join() el segundo argumento debe ser string.");
-        return Value.FromString("");
+        if (element.Type != slice.ElementType)
+        {
+            AddSemanticError(line, column, $"No se puede agregar {element.Type} a un slice de {slice.ElementType}.");
+            return;
+        }
+
+        slice.Append(element);
     }
 
-    Slice slice = sliceVal.AsSlice();
-
-    if (slice.ElementType != ValueType.String)
+    private Value EvaluateSlicesIndex(Value sliceVal, Value searchVal, int line, int column)
     {
-        AddSemanticError(line, col, "strings.join() se aplica solo a slices de strings.");
-        return Value.FromString("");
+        if (sliceVal.Type != ValueType.Slice)
+        {
+            AddSemanticError(line, column, "slices.Index() el primer argumento debe ser un slice.");
+            return Value.FromInt(-1);
+        }
+
+        int index = SliceOperations.Index(sliceVal.AsSlice(), searchVal);
+        return Value.FromInt(index);
     }
 
-    string result = SliceOperations.Join(slice, sepVal.AsString());
-    return Value.FromString(result);
-}
+    private Value EvaluateStringsJoin(Value sliceVal, Value sepVal, int line, int column)
+    {
+        if (sliceVal.Type != ValueType.Slice)
+        {
+            AddSemanticError(line, column, "strings.join() el primer argumento debe ser un slice.");
+            return Value.FromString("");
+        }
 
+        if (sepVal.Type != ValueType.String)
+        {
+            AddSemanticError(line, column, "strings.join() el segundo argumento debe ser string.");
+            return Value.FromString("");
+        }
 
+        Slice slice = sliceVal.AsSlice();
+
+        if (slice.ElementType != ValueType.String)
+        {
+            AddSemanticError(line, column, "strings.join() se aplica solo a slices de strings.");
+            return Value.FromString("");
+        }
+
+        string result = SliceOperations.Join(slice, sepVal.AsString());
+        return Value.FromString(result);
+    }
+
+    private string DescribeSlice(ValueType elementType, ValueType nestedType)
+    {
+        return elementType == ValueType.Slice
+            ? $"[]{DescribeSlice(nestedType, ValueType.Nil)}"
+            : elementType.ToString();
+    }
 }

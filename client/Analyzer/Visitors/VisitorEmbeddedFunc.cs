@@ -29,7 +29,6 @@ public partial class Visitor{
     private Value VisitStrconvAtoi(ConversionFuncContext context)
     {
         Value strValue = Visit(context.expresion());
-        Console.WriteLine($"DEBUG: Ejecutando strconv.Atoi con valor: {strValue}");
 
         if (strValue.Type != ValueType.String)
         {
@@ -49,7 +48,6 @@ public partial class Visitor{
 
         if (int.TryParse(str, out int result))
         {
-            Console.WriteLine($"DEBUG: strconv.Atoi convertido exitosamente: {result}");
             return new Value(ValueType.Int, result);
         }
         else
@@ -63,8 +61,6 @@ public partial class Visitor{
     private Value VisitStrconvParseFloat(ConversionFuncContext context)
     {
         Value strValue = Visit(context.expresion());
-        Console.WriteLine($"DEBUG: Ejecutando strconv.ParseFloat con valor: {strValue}");
-
         if (strValue.Type != ValueType.String)
         {
             AddSemanticError(context.Start.Line, context.Start.Column,
@@ -76,7 +72,6 @@ public partial class Visitor{
 
         if (double.TryParse(str, out double result))
         {
-            Console.WriteLine($"DEBUG: strconv.ParseFloat convertido exitosamente: {result}");
             return new Value(ValueType.Float, result);
         }
         else
@@ -90,11 +85,7 @@ public partial class Visitor{
     private Value VisitReflectTypeOf(ConversionFuncContext context)
     {
         Value val = Visit(context.expresion());
-        Console.WriteLine($"DEBUG: Ejecutando reflect.TypeOf con valor de tipo: {val.Type}");
-
         string typeName = GetTypeName(val);
-        Console.WriteLine($"DEBUG: reflect.TypeOf ha determinado el tipo: {typeName}");
-        
         return new Value(ValueType.String, typeName);
     }
 

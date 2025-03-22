@@ -49,9 +49,8 @@ public class StructInstance : Value
     public StructType Type { get; private set; }
     public Dictionary<string, Value> Fields { get; } = new Dictionary<string, Value>();
     
-    // Nuevo constructor que utiliza un enfoque diferente para evitar la validación circular
     public StructInstance(StructType structType) 
-        : base(ValueType.Struct) // Usa el constructor protegido que no valida data
+        : base(ValueType.Struct) 
     {
         if (structType == null)
             throw new Exception("No se puede crear una instancia de struct con un tipo nulo");
@@ -59,11 +58,9 @@ public class StructInstance : Value
         Type = structType;
         StructName = structType.Name;
         
-        // Asignar this como el Data para resolver la referencia circular
         this.Data = this;
     }
     
-    // Nuevo constructor estático que maneja la creación e inicialización
     public static StructInstance Create(StructType structType)
     {
         if (structType == null)
