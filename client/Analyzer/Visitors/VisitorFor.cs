@@ -4,48 +4,157 @@ using static gramaticaParser;
 
 public partial class Visitor
 {
+
     public override Value VisitForStmt([NotNull] ForStmtContext context)
     {
         if (context.forWhileStmt() != null)
+        {
             return Visit(context.forWhileStmt());
-
-        if (context.forRangeStmt() != null)
+        }
+        else if (context.forRangeStmt() != null)
+        {
             return Visit(context.forRangeStmt());
-
-        return Visit(context.forThreePartStmt());
+        }
+        else
+        {
+            return Visit(context.forThreePartStmt());
+        }
     }
-
     public override Value VisitForRangeStmt([NotNull] ForRangeStmtContext context)
     {
         int line = context.Start.Line;
         int column = context.Start.Column;
+        Environment previousEnv = currentEnv;
+        currentEnv = new Environment(table, previousEnv);
 
-        using (CreateLoopEnvironment())
+        loopDepth++;
+
+        try
         {
             Value collection = Visit(context.expresion());
+
             string indexVar = context.IDENTIFIER(0).GetText();
-            string? valueVar = GetOptionalValueVar(context);
+            string? valueVar = context.IDENTIFIER().Length > 1 ? context.IDENTIFIER(1).GetText() : null;
 
-            if (!DeclareLoopVariables(collection, indexVar, valueVar, line, column))
-                return Value.FromNil();
+            currentEnv.DeclareVariable(indexVar, Value.FromInt(0), line, column, "ForRange");
 
-            IterateRange(collection, indexVar, valueVar, context);
+            if (valueVar != null)
+            {
+                if (collection.Type == ValueType.Slice)
+                {
+                    Slice slice = collection.AsSlice();
+                    currentEnv.DeclareVariable(valueVar, Value.DefaultForType(slice.ElementType), line, column, "ForRange");
+                }
+                else if (collection.Type == ValueType.String)
+                {
+                    currentEnv.DeclareVariable(valueVar, Value.DefaultForType(ValueType.Rune), line, column, "ForRange");
+                }
+                else
+                {
+                    AddSemanticError(line, column, $"La expresión después de 'range' debe ser un slice o una cadena, se obtuvo {collection.Type}.");
+                    return null!;
+                }
+            }
+
+            if (collection.Type == ValueType.Slice)
+            {
+                Slice slice = collection.AsSlice();
+                int length = slice.Len();
+
+                for (int i = 0; i < length; i++)
+                {
+                    currentEnv.SetVariable(indexVar, Value.FromInt(i));
+
+                    if (valueVar != null)
+                    {
+                        currentEnv.SetVariable(valueVar, slice[i]);
+                    }
+
+                    try
+                    {
+                        Visit(context.bloque());
+                    }
+                    catch (ContinueException)
+                    {
+                        continue;
+                    }
+                }
+            }
+            else if (collection.Type == ValueType.String)
+            {
+                string str = collection.AsString();
+                int length = str.Length;
+
+                for (int i = 0; i < length; i++)
+                {
+                    currentEnv.SetVariable(indexVar, Value.FromInt(i));
+
+                    if (valueVar != null)
+                    {
+                        currentEnv.SetVariable(valueVar, Value.FromRune(str[i]));
+                    }
+
+                    try
+                    {
+                        Visit(context.bloque());
+                    }
+                    catch (ContinueException)
+                    {
+                        continue;
+                    }
+                }
+            }
+            else
+            {
+                AddSemanticError(line, column, $"La expresión después de 'range' debe ser un slice o una cadena, se obtuvo {collection.Type}.");
+            }
+        }
+        catch (BreakException)
+        {
+        }
+        finally
+        {
+            loopDepth--;
+            currentEnv = previousEnv;
         }
 
-        return Value.FromNil();
+        return null!;
     }
+
 
     public override Value VisitForThreePartStmt([NotNull] ForThreePartStmtContext context)
     {
         int line = context.Start.Line;
         int column = context.Start.Column;
+        Environment previousEnv = currentEnv;
+        currentEnv = new Environment(table, previousEnv);
 
-        using (CreateLoopEnvironment())
+        loopDepth++;
+
+        try
         {
-            Visit(context.forInit());
-
-            while (EvaluateLoopCondition(context.expresion(), line, column))
+            if (context.forInit() != null)
             {
+                Visit(context.forInit());
+            }
+
+            while (true)
+            {
+                if (context.expresion() != null)
+                {
+                    Value condition = Visit(context.expresion());
+
+                    if (condition.Type != ValueType.Bool)
+                    {
+                        AddSemanticError(line, column,
+                            $"La condición del bucle for debe ser booleana, se obtuvo {condition.Type}.");
+                        break;
+                    }
+
+                    if (!condition.AsBool())
+                        break;
+                }
+
                 try
                 {
                     Visit(context.bloque());
@@ -54,139 +163,24 @@ public partial class Visitor
                 {
                 }
 
-                Visit(context.forPost());
+                if (context.forPost() != null)
+                {
+                    Visit(context.forPost());
+                }
             }
-        }
-
-        return Value.FromNil();
-    }
-
-    private IDisposable CreateLoopEnvironment()
-    {
-        loopDepth++;
-        var previousEnv = currentEnv;
-        currentEnv = new Environment(table, previousEnv);
-
-        return new DisposableAction(() =>
-        {
-            loopDepth--;
-            currentEnv = previousEnv;
-        });
-    }
-
-    private string? GetOptionalValueVar(ForRangeStmtContext context)
-    {
-        return context.IDENTIFIER().Length > 1
-            ? context.IDENTIFIER(1).GetText()
-            : null;
-    }
-
-    private bool DeclareLoopVariables(Value collection, string indexVar, string? valueVar, int line, int column)
-    {
-        currentEnv.DeclareVariable(indexVar, Value.FromInt(0), line, column, "ForRange");
-
-        if (valueVar == null)
-            return true;
-
-        if (collection.Type == ValueType.Slice)
-        {
-            var slice = collection.AsSlice();
-            currentEnv.DeclareVariable(valueVar, Value.DefaultForType(slice.ElementType), line, column, "ForRange");
-            return true;
-        }
-
-        if (collection.Type == ValueType.String)
-        {
-            currentEnv.DeclareVariable(valueVar, Value.DefaultForType(ValueType.Rune), line, column, "ForRange");
-            return true;
-        }
-
-        AddSemanticError(line, column,
-            $"La expresión después de 'range' debe ser un slice o una cadena, se obtuvo {collection.Type}.");
-        return false;
-    }
-
-    private void IterateRange(Value collection, string indexVar, string? valueVar, ForRangeStmtContext context)
-    {
-        try
-        {
-            if (collection.Type == ValueType.Slice)
-                IterateSlice(collection.AsSlice(), indexVar, valueVar, context.bloque());
-
-            else if (collection.Type == ValueType.String)
-                IterateString(collection.AsString(), indexVar, valueVar, context.bloque());
         }
         catch (BreakException)
         {
         }
+        finally
+        {
+            loopDepth--;
+            currentEnv = previousEnv;
+        }
+
+        return null!;
     }
 
-    private void IterateSlice(Slice slice, string indexVar, string? valueVar, BloqueContext body)
-    {
-        for (int i = 0; i < slice.Len(); i++)
-        {
-            currentEnv.SetVariable(indexVar, Value.FromInt(i));
 
-            if (valueVar != null)
-                currentEnv.SetVariable(valueVar, slice[i]);
 
-            ExecuteLoopBody(body);
-        }
-    }
-
-    private void IterateString(string str, string indexVar, string? valueVar, BloqueContext body)
-    {
-        for (int i = 0; i < str.Length; i++)
-        {
-            currentEnv.SetVariable(indexVar, Value.FromInt(i));
-
-            if (valueVar != null)
-                currentEnv.SetVariable(valueVar, Value.FromRune(str[i]));
-
-            ExecuteLoopBody(body);
-        }
-    }
-
-    private void ExecuteLoopBody(BloqueContext body)
-    {
-        try
-        {
-            Visit(body);
-        }
-        catch (ContinueException)
-        {
-        }
-    }
-
-    private bool EvaluateLoopCondition(ExpresionContext? conditionExpr, int line, int column)
-    {
-        if (conditionExpr == null)
-            return true;
-
-        Value condition = Visit(conditionExpr);
-
-        if (condition.Type != ValueType.Bool)
-        {
-            AddSemanticError(line, column,
-                $"La condición del bucle for debe ser booleana, se obtuvo {condition.Type}.");
-            return false;
-        }
-
-        return condition.AsBool();
-    }
-
-    private class DisposableAction : IDisposable
-    {
-        private readonly Action _action;
-
-        public DisposableAction(Action action)
-        {
-            _action = action;
-        }
-
-        public void Dispose()
-        {
-            _action?.Invoke();
-        }
-    }
 }
