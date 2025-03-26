@@ -231,6 +231,8 @@ README.md
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg" alt="TypeScript" width="50"/>
   <img src="https://www.vectorlogo.zone/logos/tailwindcss/tailwindcss-icon.svg" alt="TailwindCSS" width="50"/>
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linux/linux-original.svg" alt="Linux" width="50"/>
+  <img src="assets/vite.svg" alt="Vite Logo" title="Vite" width="50" style="margin: 0 15px;">
+
 </p>
 
 ## Documentación Complementaria
