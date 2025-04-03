@@ -246,7 +246,7 @@ README.md
 ### 1. Clona el repositorio:
 
 ```bash
-git clone [https://github.com/sudokentucky/OLC2_Proyecto1_202100106.git]
+git clone https://github.com/sudokentucky/OLC2_Proyecto1_202100106.git
 ```
 
 ### 2. Backend (C#):
