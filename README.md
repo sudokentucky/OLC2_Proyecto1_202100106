@@ -270,6 +270,7 @@ http://localhost:5173
 ### 5. Diagrama (generado por GitDiagram):
 
 ```mermaid
+%%{ init: { "theme": "dark" } }%%
 flowchart TB
     %% External
     UserApp["User / Frontend Application"]:::frontend
@@ -332,8 +333,8 @@ flowchart TB
     SymbolTableBuilder -->|"returns_symbols"| SymbolTable
 
     %% Styles
-    classDef frontend fill:#cce5ff,stroke:#004085,stroke-width:2px;
-    classDef backend fill:#d4edda,stroke:#155724,stroke-width:2px;
-    classDef antlr fill:#e2e3e5,stroke:#383d41,stroke-width:2px;
+    classDef frontend fill:#2c3e50,stroke:#2980b9,stroke-width:2px;
+    classDef backend fill:#34495e,stroke:#27ae60,stroke-width:2px;
+    classDef antlr fill:#5c5c5c,stroke:#f39c12,stroke-width:2px;
 
 ```
