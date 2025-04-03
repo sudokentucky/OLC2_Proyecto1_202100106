@@ -267,3 +267,73 @@ npm run dev
 ```bash
 http://localhost:5173
 ```
+### 5. Diagrama (generado por GitDiagram):
+
+```mermaid
+flowchart TB
+    %% External
+    UserApp["User / Frontend Application"]:::frontend
+
+    %% Frontend Subgraph
+    subgraph "Frontend"
+        CodeEditor["Code Editor"]:::frontend
+        CommandExec["Command Execution"]:::frontend
+        ErrorTable["Error Table"]:::frontend
+        ASTViewer["AST Viewer"]:::frontend
+        SymbolTable["Symbol Table"]:::frontend
+    end
+
+    %% Backend Subgraph
+    subgraph "Backend"
+        AppEntry["Program.cs"]:::backend
+        CompileAPI["Compile API (Compile.cs)"]:::backend
+
+        subgraph "Interpreter Pipeline"
+            direction TB
+
+            subgraph "Parsing Stage"
+                ANTLRFiles["ANTLR Files"]:::antlr
+                GrammarFiles["Grammar Files"]:::antlr
+                LexSyn["Lexical/Syntax Analysis"]:::backend
+            end
+
+            subgraph "Semantic Analysis Stage"
+                ErrorListener["Error Listener"]:::backend
+                SymbolTableBuilder["Symbol Table Builder"]:::backend
+                VisitorHandlers["Visitor Handlers"]:::backend
+                EnvironmentManager["Environment Manager"]:::backend
+            end
+
+            ASTGeneration["AST Generation (DOTgenerator & AST nodes)"]:::backend
+        end
+    end
+
+    %% Frontend interactions
+    UserApp -->|"interacts_with"| CodeEditor
+    CodeEditor -->|"submits_code"| CompileAPI
+    CommandExec -->|"triggers_request"| CompileAPI
+
+    %% Backend processing flow
+    CompileAPI -->|"invokes"| LexSyn
+    ANTLRFiles -->|"provides_tokens"| LexSyn
+    GrammarFiles -->|"provides_grammar"| LexSyn
+    LexSyn -->|"passes_to"| ErrorListener
+    LexSyn -->|"passes_to"| SymbolTableBuilder
+    LexSyn -->|"passes_to"| VisitorHandlers
+    LexSyn -->|"passes_to"| EnvironmentManager
+    ErrorListener -->|"generates_AST"| ASTGeneration
+    SymbolTableBuilder -->|"contributes_to"| ASTGeneration
+    VisitorHandlers -->|"contributes_to"| ASTGeneration
+    EnvironmentManager -->|"contributes_to"| ASTGeneration
+
+    %% Responses sent back to Frontend
+    ASTGeneration -->|"displays_AST"| ASTViewer
+    ErrorListener -->|"returns_errors"| ErrorTable
+    SymbolTableBuilder -->|"returns_symbols"| SymbolTable
+
+    %% Styles
+    classDef frontend fill:#cce5ff,stroke:#004085,stroke-width:2px;
+    classDef backend fill:#d4edda,stroke:#155724,stroke-width:2px;
+    classDef antlr fill:#e2e3e5,stroke:#383d41,stroke-width:2px;
+
+```
